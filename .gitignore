@@ -1,0 +1,10 @@
+**/*.asv
+*.html
+exp.txt
+testcases/
+matlab_source/*.txt
+matlab_source/test.pdf
+test.pdf
+**/*.mexa64
+**/*.mexw64
+**/*.mex*

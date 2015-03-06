@@ -1,0 +1,6 @@
+function out_k = padKymogramVert(kymogram, MARGIN_WIDTH)
+
+
+out_k = [fast_median(kymogram(1,:)')*ones(MARGIN_WIDTH+1, size(kymogram, 2),'uint16');...
+                             kymogram;...
+                            repmat(kymogram(end,:), [MARGIN_WIDTH+1, 1])];
