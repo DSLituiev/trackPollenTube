@@ -20,31 +20,16 @@ tifPath = fullfile(SourceDir, fileName);
 outRoiPath = fullfile(SourceDir, outRoiName);
 
 %% read and normalize the kymogram
-kymoThr = imread(tifPath)';
-
-kymoThr = normalizeKymogramZeroOne(kymoThr);
-
-figure
-imagesc(kymoThr)
-% 
-% figure
-% p = surf( double(kymoThr )); set(p, 'linestyle', 'none'); view(0,90)
-
-%% construct the curve based on the thresholded kymogram
-kymoEdge = edge(kymoThr);
-
-figure
-imagesc(kymoEdge)
-
-z =  constructPathUsingKymogramNeighbourhood(kymoThr);
-
-T = numel(z);
-t = 1:T;
+[ z, kymoEdge ] = kymo2path( tifPath );
 
 figure
 imagesc( (2^8-1)*uint8(kymoEdge) )
 hold on
 plot(z, 'k', 'linewidth', lineWidth)
+
+
+T = numel(z);
+t = 1:T;
 
 %% analyse the speed
 BINOM_FILTER = [1 4 6 4 1]';
@@ -89,12 +74,17 @@ allInds = sort( [spacedInds; maxd2xInds; T]);
 cluttered = find(diff(allInds)==1);
 allInds(cluttered(2:2:end)) = [];
 
-figure
-imagesc( (2^8-1)*uint8(kymoThr) )
-hold on
-plot(z, 'k', 'linewidth', lineWidth)
 
-plot(t(allInds) , z(allInds) , 'xr:', 'linewidth', lineWidth)
+%% plot
+figure('name', 'speed from a saved ROI')
+plot(t(2:end), diff(z), 'gx-')
+% ylim([min(0, 0.1*floor(10*min(speedFromSpline))), min(2, 0.1*ceil(10*max(speedFromSpline))) ])
+hold all
+plot([1, T], [0, 0], 'k-')
+xlabel('time')
+ylabel('speed')
+plot( t(2:end) , diff(smooth(z, 7)), 'r-')
+
 %% write the ROI
 writeImageJRoi(outRoiPath, 'PolyLine', uint16(t(allInds)) , uint16(z(allInds)) )
 
