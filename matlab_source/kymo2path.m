@@ -1,8 +1,13 @@
-function [ z, kymoEdge, kymoThr ] = kymo2path( tifPath )
+function [ z, kymoEdge, kymoThr ] = kymo2path( tifPath, rotate )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
-kymoThr = imread(tifPath)';
+if nargin>1 && rotate
+    kymoThr = imread(tifPath);
+else
+    kymoThr = imread(tifPath)';
+end
+
 
 kymoThr = normalizeKymogramZeroOne(kymoThr);
 

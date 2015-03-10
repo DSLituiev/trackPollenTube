@@ -26,10 +26,10 @@ r = 1+(0:1:round(N0))';
 
 % curve = cscvn1(PTroi.mnCoordinates') ;
 
-path.xy = spline(r0, PTroi.mnCoordinates', r)';
+% path.xy = spline(r0, PTroi.mnCoordinates', r)';
 % path.xy = pchip(r0, PTroi.mnCoordinates', r)';
-%path.xy = cscvn(points) 
-
+% path.xy = cscvn(points) 
+path.xy = interp1(r0', PTroi.mnCoordinates, r, interpType);
 
 path.x = path.xy(:,1);
 path.y = path.xy(:,2);

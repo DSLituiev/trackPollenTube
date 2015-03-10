@@ -1,4 +1,4 @@
-function writeImageJRoi(fileName, roiType, x, y)
+function status = writeImageJRoi(fileName, roiType, x, y)
 %WRITEIMAGEJROI(fileName, roiType, x, y)  -- writes ImageJ ROI files given coordinates and ROI type
 %    INPUT:
 % fileName -- file name for the ROI, e.g. 'cell.roi'
@@ -68,5 +68,5 @@ fseek(fidROI, 64, 'bof'); count = 64;
 
 count = count + fwrite(fidROI, ROI.coordsX - ROI.vnRectBounds(2), 'int16');
 count = count + fwrite(fidROI, ROI.coordsY - ROI.vnRectBounds(1), 'int16');
-      
-fclose(fidROI);
+
+status = fclose(fidROI);
