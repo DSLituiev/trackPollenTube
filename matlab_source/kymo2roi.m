@@ -1,6 +1,16 @@
 function [ status ] = kymo2roi( tifPath, outRoiPath, varargin )
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+%KYMO2ROI -- extract edge ROI from a thresholded kymogram
+%
+% Syntax:
+%========
+%    status = kymo2roi( tifPath, outRoiPath, [rotate], [visualize] )`
+%
+% Input:
+% ======
+% - tifPath    -- path to the input `tif` file (of a thresholded kymogram)
+% - outRoiPath -- path to the output `roi` file
+% - rotate     -- rotate the input image (optional, boolean, default = false)
+% - visualize  -- plot the results       (optional, boolean, default = false)
 
 FILTER_RADIUS = 3;
 THRESHOLD = 2.5;
@@ -37,13 +47,14 @@ t = 1:T;
 
 if visualize
     figure
+    subplot(3,1,1)
     plot(t, z );
     hold all
     plot(t(ind), z(ind), 'r+' );
     xlabel('time')
     ylabel('z')
 
-    figure
+    subplot(3,1,2)
     plot(t(1:end-1), dz ); hold all
     plot(t(ind), dz(min(ind, numel(dz))), 'rx'  );
     ylim([0, min(2, 0.1*ceil(10*max(dz))) ])
@@ -52,7 +63,7 @@ if visualize
     xlabel('time')
     ylabel('speed')
 
-    figure
+    subplot(3,1,3)
     plot(t(2:end-1), ddz );
     hold all
     plot(t(ind), ddz(min(max(ind-1, 1), numel(ddz) ) ), 'rx' )
@@ -60,7 +71,11 @@ if visualize
     ylabel('acceleration')
 end
 
-status = writeImageJRoi(outRoiPath, 'PolyLine', uint16(z(ind)),  uint16(t(ind))  );
+if rotate    
+    status = writeImageJRoi(outRoiPath, 'PolyLine',  uint16(t(ind)),  uint16(z(ind)) );
+else
+    status = writeImageJRoi(outRoiPath, 'PolyLine', uint16(z(ind)),  uint16(t(ind)) );
+end
 
 end
 

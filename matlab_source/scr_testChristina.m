@@ -19,7 +19,7 @@ tifPath = fullfile(SourceDir, fileName);
 outRoiPath = fullfile(SourceDir, outRoiName);
 
 %% read and normalize the kymogram
-kymo2roi( tifPath, outRoiPath );
+kymo2roi( tifPath, outRoiPath, 0,1 );
 
 %= NOW you can modify the ROI if it looks not as you expected
 %% read the ROI
