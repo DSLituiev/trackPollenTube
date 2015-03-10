@@ -7,11 +7,15 @@ function [ status ] = kymo2roi( tifPath, outRoiPath, varargin )
 %
 % Input:
 % ======
-% - tifPath    -- path to the input `tif` file (of a thresholded kymogram)
+% - tifPath    -- path to the input `tif` file (of a kymogram)
+%                 OR a kymogram per se
 % - outRoiPath -- path to the output `roi` file
 % - rotate     -- rotate the input image (optional, boolean, default = false)
 % - visualize  -- plot the results       (optional, boolean, default = false)
 
+includeDependencies( )
+
+%%
 FILTER_RADIUS = 3;
 THRESHOLD = 2.5;
 
@@ -47,14 +51,14 @@ t = 1:T;
 
 if visualize
     figure
-    subplot(3,1,1)
+    ax(1) = subplot(3,1,1);
     plot(t, z );
     hold all
     plot(t(ind), z(ind), 'r+' );
     xlabel('time')
     ylabel('z')
 
-    subplot(3,1,2)
+    ax(2) = subplot(3,1,2);
     plot(t(1:end-1), dz ); hold all
     plot(t(ind), dz(min(ind, numel(dz))), 'rx'  );
     ylim([0, min(2, 0.1*ceil(10*max(dz))) ])
@@ -63,12 +67,15 @@ if visualize
     xlabel('time')
     ylabel('speed')
 
-    subplot(3,1,3)
+    ax(3) = subplot(3,1,3);
     plot(t(2:end-1), ddz );
     hold all
     plot(t(ind), ddz(min(max(ind-1, 1), numel(ddz) ) ), 'rx' )
     xlabel('time')
     ylabel('acceleration')
+    
+    set(ax, 'xlim', [0, T])
+    
 end
 
 if rotate    

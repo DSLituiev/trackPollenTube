@@ -1,10 +1,4 @@
 function FinalImage = readTifSelected(FileTif, rowRange, colRange)
-% READTIFSELECTED(FileTif, rowRange, colRange)  reads a selected x,y-range
-% from a multidimensional TIFF file
-%
-%  include the path or copy the compiled tifflib :
-%  addpath('C:\Program Files\MATLAB\R2012a\toolbox\matlab\imagesci\private')
-
 InfoImage    = imfinfo(FileTif);
 mImage       = InfoImage(1).Width;
 nImage       = InfoImage(1).Height;
@@ -12,11 +6,12 @@ NumberImages = length(InfoImage);
 
 warning('off','MATLAB:imagesci:Tiff:libraryWarning')
 
-FileID       = tifflib('open',FileTif,'r');
-rps          = tifflib('getField',FileID, Tiff.TagID.RowsPerStrip);
+FileID = Tiff(FileTif, 'r');
+rps          = FileID.getTag('RowsPerStrip');
 rps          = min(rps, mImage);
 
-
+%== include the path or copy the compiled tifflib :
+%  addpath('C:\Program Files\MATLAB\R2012a\toolbox\matlab\imagesci\private')
 
 rowStart =  max(rowRange(1), 1);
 rowEnd   =  min(rowRange(2), mImage);
@@ -33,12 +28,12 @@ S.type = '()';
 S.subs = {':',colStart:1:colEnd};
 
 for zz = 1:NumberImages
-    tifflib('setDirectory', FileID, zz);
+    FileID.setDirectory(zz);
     %= Go through each strip of data.
     for r = rowStartRound:rps:rowEndRound
         row_inds = (r:min(rowEndRound, r+rps-1))-rowStartRound+1;
-        stripNum = tifflib('computeStrip',FileID, r);
-        FinalImage(row_inds,:,zz) = subsref( tifflib('readEncodedStrip',FileID, stripNum), S );
+        stripNum = FileID.computeStrip(r);
+        FinalImage(row_inds,:,zz) = subsref( FileID.readEncodedStrip(stripNum), S );
     end
 end
 
@@ -50,4 +45,4 @@ if size(FinalImage,1) ~= diff(rowRange)+1
     warning('readTifSelected:DimensionMismatch', 'Row number mismatch while reading\t%s!\n',FileTif)
 end
     
-tifflib('close',FileID);
+FileID.close();

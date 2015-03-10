@@ -1,4 +1,4 @@
-function out = ImageProcessingToolboxAvailable()
+function [out] = ImageProcessingToolboxAvailable()
     toolboxName1 = 'Image Processing Toolbox';
     toolboxName2 = 'Image_Toolbox';
     v = ver;
@@ -10,4 +10,5 @@ function out = ImageProcessingToolboxAvailable()
     if ~out
         disp('Image Processing Toolbox not found')
     end
+%     path = toolboxdir(toolboxName2);
 end

@@ -1,7 +1,8 @@
-function kymoGram = constructKymogram(path, mov, varargin)
+function [kymoGram, path] = constructKymogram(path, mov, varargin)
 % constructs a kymogram given a movie and the path-ROI
 %
-% === Input ===
+%Input 
+%=====
 % - path   -- the path object:
 %    >- path.x and path.y  --  ROI (detailed point coordinates,
 %                                 with the unit spacing between the points)
@@ -23,6 +24,14 @@ if isempty(varargin)
     kymoMethod = 'l1';
 else
     kymoMethod = varargin{1};
+end
+
+if ~isfield(path, 'x') || ~isfield(path, 'y')|| ~isfield(path, 'L')
+    if isfield(path, 'mnCoordinates')
+        path.x = path.mnCoordinates(:,1);
+        path.y = path.mnCoordinates(:,2);
+        path.L = size(path.mnCoordinates, 1);
+    end
 end
 
 switch kymoMethod

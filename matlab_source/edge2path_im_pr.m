@@ -1,12 +1,24 @@
-function [ z ] = edge2path_im_pr( kymoEdge, MEDIAN_RADIUS)
+function [ z ] = edge2path_im_pr( kymoEdge, MEDIAN_RADIUS )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
+    MIN_T = 7;
+
     T = size(kymoEdge, 2);
     L = size(kymoEdge, 1);
+    
     Connected = bwconncomp(kymoEdge);
     numPixels = cellfun(@numel,Connected.PixelIdxList);
-    [~, idx] = max(numPixels);
+    for ii = numel(Connected.PixelIdxList):-1:1
+       [Lc, Tc] = ind2sub([L, T], Connected.PixelIdxList{ii});
+       [min_t(ii), min_i] = min(Tc);
+       min_l(ii) = Lc(min_i);
+    end
+    
+    valid_regions = find(min_t < MIN_T);
+    [~, idx] = max( - min_l(valid_regions)/L + numPixels(valid_regions)/T);
+    
+    % [~, idx] = max(numPixels);
     [Lc, Tc] = ind2sub([L, T], Connected.PixelIdxList{idx});
 
     
