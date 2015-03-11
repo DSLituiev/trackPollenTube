@@ -30,8 +30,8 @@ if nargin<4
 else
     visualize = varargin{2};
 end
-
-[ z, kymoEdge ] = kymo2path( tifPath, rotate );
+%% extract the trace
+[ z, kymoEdge ] = kymo2path( tifPath, rotate, visualize );
 
 if visualize
     lineWidth = 3;
@@ -45,7 +45,6 @@ end
 [ ind, dz, ddz ] = bendings( z, FILTER_RADIUS, THRESHOLD);
 
 %% plot speed 
-
 T = numel(z);
 t = 1:T;
 
@@ -77,7 +76,7 @@ if visualize
     set(ax, 'xlim', [0, T])
     
 end
-
+%% write
 if rotate    
     status = writeImageJRoi(outRoiPath, 'PolyLine',  uint16(t(ind)),  uint16(z(ind)) );
 else

@@ -1,5 +1,5 @@
-function [ z, kymoEdge, kymoThr ] = kymo2path( tifPath, rotate )
-%KYMO2PATH(tifPath, rotate) -- extract edge path from a (thresholded) kymogram
+function [ z, kymoEdge, kymo ] = kymo2path( tifPath, rotate,  varargin)
+%KYMO2PATH(tifPath, rotate) -- extract edge path from a  kymogram
 %
 %   INPUT
 % - tifPath    -- path to the input `tif` file (of a kymogram)
@@ -8,21 +8,46 @@ function [ z, kymoEdge, kymoThr ] = kymo2path( tifPath, rotate )
 
 if ischar(tifPath)&& exist(tifPath, 'file')
     if nargin>1 && rotate
-        kymoThr = imread(tifPath);
+        kymo = imread(tifPath);
     else
-        kymoThr = imread(tifPath)';
+        kymo = imread(tifPath)';
     end
 elseif isnumeric(tifPath)
-    kymoThr = tifPath;
+    kymo = tifPath;
 end
     
 EDGE_THRESH = 0;
 EDGE_SIGMA = 16;
 
-% kymoThr = normalizeKymogramZeroOne(kymoThr);
-kymoEdge = edge(kymoThr,'canny', EDGE_THRESH, EDGE_SIGMA );
 
-z =  edge2path( double(kymoEdge) );
+KYMO_QUANTILE = 0.90;  %== the upper quantile to be cut in the kymogram
+%                         before threshold determination
+
+q = quantile(kymo(:), KYMO_QUANTILE);
+kymo(kymo > q) = q;
+
+% kymoThr = normalizeKymogramZeroOne(kymoThr);
+kymoEdge = edge(kymo,'canny', EDGE_THRESH, EDGE_SIGMA );
+
+kymoEdgeOnlyFw = automatonFilterRemoveBackWardMovements(kymoEdge);
+
+kymoEdgeOnlyFw(kymoEdgeOnlyFw<0) = 0;
+
+if nargin<3
+    visualize = false;
+else
+    visualize = varargin{1};
+end
+if visualize
+    figure
+    subplot(1,2,1)
+    imagesc(kymoEdge)
+
+    subplot(1,2,2)
+    imagesc(kymoEdgeOnlyFw)
+end
+
+z =  edge2path( double(kymoEdgeOnlyFw) );
 
 end
 
