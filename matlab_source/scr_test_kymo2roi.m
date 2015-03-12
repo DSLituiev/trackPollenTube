@@ -12,11 +12,26 @@ includeDependencies( )
 SourceDir = '../testcases/QAN_WT_017_23112012_Rg14burst';
 fileName = 'kymo.tif';
 outRoiName = 'out.roi';
+outImg = 'out.png';
 
-tifPath = fullfile(SourceDir, fileName); 
+tifPath = fullfile(SourceDir,  fileName);
 outRoiPath = fullfile(SourceDir, outRoiName);
+outImgPath = fullfile(SourceDir, outImg);
 
-%% read and normalize the kymogram
-kymo2roi( tifPath, outRoiPath, 1,1 );
+kymo2roi2plot( tifPath, outRoiPath, outImg);
 
-%= NOW you can modify the ROI if it looks not as you expected
+return
+
+SourceDir = '/media/QuyNgo_data/Analysed data/WT';
+FolderListing = DescrReaderOptsCell(SourceDir, nameCheckList('p'));
+
+for jj = 1:numel(FolderListing)
+    ParentDir = fullfile(SourceDir, FolderListing(jj).name);
+    
+    tifPath = fullfile(ParentDir,  fileName);
+    outRoiPath = fullfile(ParentDir, outRoiName);
+    outImgPath = fullfile(ParentDir, outImg);
+    %% read and normalize the kymogram
+    close all
+    kymo2roi2plot( tifPath, outRoiPath, outImg);
+end

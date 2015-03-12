@@ -37,7 +37,7 @@ function [ z ] = edge2path_im_pr( kymoEdge, MEDIAN_RADIUS )
             if Tc(cc) == Tc(cc-1) +1
                 z(tt) = Lc(cc);
             else
-                z(tt) = max(Lc(tt == Tc(cc)));
+                z(tt) = max(Lc(tt == Tc));
             end
         end
         z = fastmedfilt1d(z, MEDIAN_RADIUS);

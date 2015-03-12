@@ -56,6 +56,11 @@ if nargin < 4
     imeth = 'linear';
 end
 
+if (size(S,1)>1)
+    clmnFlag = true;
+else
+    clmnFlag = false;
+end
 % make row vectors
 t = t(:)';
 S = S(:)';
@@ -107,3 +112,6 @@ ind2 = ind + (II-2); %update indices
 
 t0close = t(ind2);
 s0close = S(ind2);
+if clmnFlag
+    ind = ind';
+end
