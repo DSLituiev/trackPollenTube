@@ -9,7 +9,7 @@ function [ z, kymoEdge, kymo ] = kymo2path(  varargin)
 p = inputParser;
 p.KeepUnmatched = true;
 
-addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && sum(size(x)>1))==2) );
+addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==2) ) ));
 addParamValue(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 addParamValue(p, 'EDGE_SIGMA',  16, @isscalar);

@@ -16,7 +16,7 @@ function [ status ] = kymo2roi( varargin )
 p = inputParser;
 p.KeepUnmatched = true;
 
-addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && sum(size(x)>1))==2) );
+addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==2) ) ) );
 addRequired(p, 'outRoiPath', @(x)(ischar(x)));
 addOptional(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));

@@ -5,12 +5,13 @@ if ischar(roiPath)&& exist(roiPath, 'file')
     ROI = ReadImageJROI(roiPath); 
     %== ROI.vnRectBounds:    ['nTop',  'nLeft' , 'nBottom'  , 'nRight']
     %=             frame:    ['ymin',  'xmin'  , 'ymax'     , 'xmax'] 
-    frame = [ROI.vnRectBounds(1), ROI.vnRectBounds(2); ROI.vnRectBounds(3), ROI.vnRectBounds(4)]+1;
-    % frameInd = {(ROI.vnRectBounds(1):ROI.vnRectBounds(3))+1, (ROI.vnRectBounds(2):ROI.vnRectBounds(4))+1};
+    frame = reshape(ROI.vnRectBounds, [2,2])' + 1;
+    % = [ROI.vnRectBounds(1), ROI.vnRectBounds(2); ROI.vnRectBounds(3), ROI.vnRectBounds(4)]+1;
 elseif isstruct(roiPath)&& all(isfield(roiPath, {'vnRectBounds','strType'}))
     %== take the ROI supplied in the native format
     ROI = roiPath;
-    frame = [roiPath.vnRectBounds(1), roiPath.vnRectBounds(2);roiPath.vnRectBounds(3), roiPath.vnRectBounds(4)]+1;
+    frame = reshape(ROI.vnRectBounds, [2,2])' + 1;
+    % [roiPath.vnRectBounds(1), roiPath.vnRectBounds(2);roiPath.vnRectBounds(3), roiPath.vnRectBounds(4)]+1;
 elseif   isnumeric(roiPath)
     %== take the ROI supplied in the 'frame' format
     %= frame: ['ymin', 'xmin'; 'ymax', 'xmax'] 

@@ -1,7 +1,7 @@
 function FinalImage = readTifSelected(FileTif, rowRange, colRange)
 InfoImage    = imfinfo(FileTif);
-mImage       = InfoImage(1).Width;
-nImage       = InfoImage(1).Height;
+nImage       = InfoImage(1).Width;
+mImage       = InfoImage(1).Height;
 NumberImages = length(InfoImage);
 
 warning('off','MATLAB:imagesci:Tiff:libraryWarning')
@@ -43,6 +43,10 @@ FinalImage = FinalImage( rowStart-rowStartRound+1:end-(rowEndRound-rowEnd),:,:);
 %== check the row size
 if size(FinalImage,1) ~= diff(rowRange)+1
     warning('readTifSelected:DimensionMismatch', 'Row number mismatch while reading\t%s!\n',FileTif)
+end
+%== check the col size
+if size(FinalImage,2) ~= diff(colRange)+1
+    warning('readTifSelected:DimensionMismatch', 'Column number mismatch while reading\t%s!\n',FileTif)
 end
     
 FileID.close();
