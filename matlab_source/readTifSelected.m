@@ -1,25 +1,23 @@
 function FinalImage = readTifSelected(FileTif, rowRange, colRange)
 InfoImage    = imfinfo(FileTif);
-nImage       = InfoImage(1).Width;
-mImage       = InfoImage(1).Height;
 NumberImages = length(InfoImage);
 
 warning('off','MATLAB:imagesci:Tiff:libraryWarning')
 
 FileID = Tiff(FileTif, 'r');
-rps          = FileID.getTag('RowsPerStrip');
-rps          = min(rps, mImage);
+rows_per_strip          = FileID.getTag('RowsPerStrip');
+rows_per_strip          = min(rows_per_strip, InfoImage(1).Height);
 
 %== include the path or copy the compiled tifflib :
 %  addpath('C:\Program Files\MATLAB\R2012a\toolbox\matlab\imagesci\private')
 
 rowStart =  max(rowRange(1), 1);
-rowEnd   =  min(rowRange(2), mImage);
+rowEnd   =  min(rowRange(2), InfoImage(1).Height);
 colStart =  max(colRange(1), 1);
-colEnd   =  min(colRange(2), nImage);
+colEnd   =  min(colRange(2), InfoImage(1).Width);
 
-rowStartRound = rps*floor((rowStart-1)/rps)+1;
-rowEndRound =  rps*ceil(rowEnd/rps);
+rowStartRound = rows_per_strip * floor((rowStart-1)/rows_per_strip)+1;
+rowEndRound   = rows_per_strip * ceil(rowEnd/rows_per_strip);
 
 FinalImage   = zeros(rowEndRound-rowStartRound+1, colEnd-colStart+1, NumberImages,'uint16');
 
@@ -30,8 +28,8 @@ S.subs = {':',colStart:1:colEnd};
 for zz = 1:NumberImages
     FileID.setDirectory(zz);
     %= Go through each strip of data.
-    for r = rowStartRound:rps:rowEndRound
-        row_inds = (r:min(rowEndRound, r+rps-1))-rowStartRound+1;
+    for r = rowStartRound:rows_per_strip:rowEndRound
+        row_inds = (r:min(rowEndRound, r+rows_per_strip-1))-rowStartRound+1;
         stripNum = FileID.computeStrip(r);
         FinalImage(row_inds,:,zz) = subsref( FileID.readEncodedStrip(stripNum), S );
     end

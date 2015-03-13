@@ -1,4 +1,4 @@
-function [ status ] = kymo2roi( varargin )
+function [ t,z, status ] = kymo2roi( varargin )
 %KYMO2ROI -- extract edge ROI from a thresholded kymogram
 %
 % Syntax:

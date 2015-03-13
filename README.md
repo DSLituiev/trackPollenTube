@@ -30,3 +30,18 @@ a TIFF movie and the object's 2D path in ImageJ ROI format are taken as input
 Output
 ======
 a kymogram
+
+Pipeline / Workflow
+===================
+
+    [movie2roi]
+    movie + x,y-ROI     -->  kymo
+    kymo                -->  r,t-ROI
+    [quality control]
+
+    []
+    x,y-ROI + r,t-ROI   -->  x,y,t-ROI
+    x,y,t-ROI + radius  -->  x,y,t-mask
+    movie + x,y,t-mask  -->  pixel intensities
+
+
