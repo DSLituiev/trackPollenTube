@@ -1,8 +1,20 @@
-function varargout = createKymoMask(movieDimension, path, varargin)
+function varargout = createKymoMask(movDims, xyRoi, rtRoi, radius, path, varargin)
 %== creates a mask from the x&y coordinates of the object path and the r(t)
 % curve trace of the object movement
 %
 % requires the "rot90_3D" function
+%% check the input parameters
+p = inputParser;
+p.KeepUnmatched = true;
+
+addRequired(p, 'movPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
+addRequired(p, 'roiPath', @(x)(ischar(x) && exist(x, 'file')) );
+addOptional(p, 'kymoPath', '', @writable );
+addParamValue(p, 'interpolation', 'l2', @(x)(any(strcmpi(x,{'l1', 'l2', 'm4'}))) );
+addParamValue(p, 'm4epsilon', 16, @isscalar );
+addParamValue(p, 'pad', 0, @isscalar );
+parse(p, varargin{:});
+%%
 
 frame = [ floor([min(path.x), min(path.y)]) - path.R, 1;
     ceil([max(path.x), max(path.y)]) + path.R, path.eruptionT];
@@ -36,8 +48,8 @@ end
 % [XX, ~, ~ ] = ndgrid(1:diff(frame(:,1)), 1, 1:eruptionT);
 % [ ~, YY, ~] = ndgrid(1, 1:diff(frame(:,2)), 1:eruptionT);
 
-[YY, ~, ~ ] = ndgrid(1:double(movieDimension(1)), 1, 1:path.eruptionT);
-[ ~, XX, ~] = ndgrid(1, 1:double(movieDimension(2)), 1:path.eruptionT);
+[YY, ~, ~ ] = ndgrid(1:double(movDims(1)), 1, 1:path.eruptionT);
+[ ~, XX, ~] = ndgrid(1, 1:double(movDims(2)), 1:path.eruptionT);
 
 mask =  bsxfun(@plus, ...
     bsxfun(@minus, XX, permute( path.x(z(1:path.eruptionT)) , [3,2,1]) ).^2 ,...

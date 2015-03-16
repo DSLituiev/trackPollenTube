@@ -4,7 +4,7 @@ clear all
 clc
 %% include dependencies
 includeDependencies( )
-addpath('/usr/local/MATLAB/R2013b/bin/glnxa64/') % libtiff
+% addpath('/usr/local/MATLAB/R2013b/bin/glnxa64/') % libtiff
 %% define path to the files
 SourceDir = '../testcases/QAN_WT_017_23112012_Rg14burst';
 fileName = 'dsRed-a-c.tif';
@@ -28,4 +28,4 @@ f = plot_snapshot_roi( mov, xy_roi, t);
 %% 
 outRoiName = 'out.roi';
 outRoiPath = fullfile(SourceDir, outRoiName);
-kymo2roi( kymogram, outRoiPath, 0 );
+kymo2roi( kymogram, outRoiPath, 1 );

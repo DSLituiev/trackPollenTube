@@ -6,7 +6,7 @@ p = inputParser;
 p.KeepUnmatched = true;
 
 addRequired(p, 'movPath', @(x)(ischar(x) && exist(x, 'file')) );
-addRequired(p, 'roiPath', @(x)( (ischar(x) && exist(x, 'file')) || (isstruct(x)) ));
+addRequired(p, 'roiPath', @(x)( (ischar(x) && exist(x, 'file')) || (isstruct(x)) || (isobject(x)) ));
 addOptional(p, 'padding', 0, @isscalar );
 parse(p, varargin{:});
 %%

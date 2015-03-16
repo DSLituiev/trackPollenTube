@@ -32,7 +32,7 @@ addParamValue(p, 'm4epsilon', 16, @isscalar );
 addParamValue(p, 'pad', 0, @isscalar );
 parse(p, varargin{:});
 %% read roi
-roi = constructCurveROI(p.Results.roiPath);
+roi = CurveROI(p.Results.roiPath);
 %% read movie
 if feval( @(x)(ischar(x) && exist(x, 'file')) , p.Results.movPath)
     [mov] = cropRectRoiFast(p.Results.movPath, roi, p.Results.pad);

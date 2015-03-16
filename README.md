@@ -35,13 +35,13 @@ Pipeline / Workflow
 ===================
 
     [movie2roi]
-    movie + x,y-ROI     -->  kymo
-    kymo                -->  r,t-ROI
-    [quality control]
+        [movie2kymo] : movie + x,y-ROI     -->  kymo
+        [kymo2roi]   : kymo                -->  r,t-ROI
 
-    []
-    x,y-ROI + r,t-ROI   -->  x,y,t-ROI
-    x,y,t-ROI + radius  -->  x,y,t-mask
-    movie + x,y,t-mask  -->  pixel intensities
+    [manual quality control]
+
+    [rois2intensities]
+        [rois2mask]        : x,y-ROI + r,t-ROI + radius  -->  x,y,t-mask
+        [mask2intensities] : movie + x,y,t-mask  -->  pixel intensities
 
 

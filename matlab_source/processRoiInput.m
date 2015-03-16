@@ -7,7 +7,8 @@ if ischar(roiPath)&& exist(roiPath, 'file')
     %=             frame:    ['ymin',  'xmin'  , 'ymax'     , 'xmax'] 
     frame = reshape(ROI.vnRectBounds, [2,2])' + 1;
     % = [ROI.vnRectBounds(1), ROI.vnRectBounds(2); ROI.vnRectBounds(3), ROI.vnRectBounds(4)]+1;
-elseif isstruct(roiPath)&& all(isfield(roiPath, {'vnRectBounds','strType'}))
+elseif ( isobject(roiPath) && isprop(roiPath, 'vnRectBounds') && isprop(roiPath,'strType') ) ...
+        || ( isstruct(roiPath)  && all(isfield(roiPath, {'vnRectBounds','strType'})) )
     %== take the ROI supplied in the native format
     ROI = roiPath;
     frame = reshape(ROI.vnRectBounds, [2,2])' + 1;

@@ -32,8 +32,8 @@ sROI.nVersion = 223;
 
 % ['nTop', 'nLeft', 'nBottom', 'nRight']
 ROI.vnRectBounds = [ min(y), min(x), max(y), max(x)];
-ROI.coordsX = x(:);
-ROI.coordsY = y(:);
+ROI.x0 = x(:);
+ROI.y0 = y(:);
 
 ROI.nNumCoords = numel(x);
 
@@ -66,7 +66,7 @@ count = count + fwrite(fidROI,  6*16^3, 'int16');
 % -- Go after header
 fseek(fidROI, 64, 'bof'); count = 64;
 
-count = count + fwrite(fidROI, ROI.coordsX - ROI.vnRectBounds(2), 'int16');
-count = count + fwrite(fidROI, ROI.coordsY - ROI.vnRectBounds(1), 'int16');
+count = count + fwrite(fidROI, ROI.x0 - ROI.vnRectBounds(2), 'int16');
+count = count + fwrite(fidROI, ROI.y0 - ROI.vnRectBounds(1), 'int16');
 
 status = fclose(fidROI);

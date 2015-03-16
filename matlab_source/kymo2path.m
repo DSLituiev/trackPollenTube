@@ -14,7 +14,7 @@ addParamValue(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 addParamValue(p, 'EDGE_SIGMA',  16, @isscalar);
 addParamValue(p, 'EDGE_THRESH',  0, @isscalar);
-addParamValue(p, 'KYMO_QUANTILE',  .9, @isscalar);
+addParamValue(p, 'KYMO_QUANTILE',  .8, @isscalar);
 
 parse(p, varargin{:});
 %% read the file or copy the array
@@ -35,12 +35,14 @@ q = quantile(kymo(:), p.Results.KYMO_QUANTILE);
 kymo(kymo > q) = q;
 
 % kymoThr = normalizeKymogramZeroOne(kymoThr);
+bf = binomialFilter( p.Results.EDGE_SIGMA );
+kymoSmooth = paddedConv2( kymo , conv2(bf', bf) );
+
+[~,~,gv,gh] = edge(kymoSmooth,'sobel',p.Results.EDGE_THRESH);
+
 kymoEdge = edge(kymo,'canny', p.Results.EDGE_THRESH, p.Results.EDGE_SIGMA );
-
+kymoEdge(gv<0) = 0;
 kymoEdgeOnlyFw = automatonFilterRemoveBackWardMovements(kymoEdge, p.Results.visualize);
-
-kymoEdgeOnlyFw(kymoEdgeOnlyFw<0) = 0;
-
 
 if p.Results.visualize
     figure
@@ -50,6 +52,8 @@ if p.Results.visualize
     subplot(2,1,2)
     imagesc(kymoEdgeOnlyFw)
 end
+
+kymoEdgeOnlyFw(kymoEdgeOnlyFw<0) = 0;
 
 z =  edge2path( double(kymoEdgeOnlyFw) );
 

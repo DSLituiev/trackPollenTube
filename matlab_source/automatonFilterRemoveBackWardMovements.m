@@ -9,6 +9,9 @@ end
 T = size(kymoThr, 2);
 L = size(kymoThr, 1);
 %
+% [ out ] = binomialFilter( 7 );
+% kymoThr = conv2(double(kymoThr), out');
+% kymoThrInt = int8(double(kymoThr)./quantile(double(kymoThr(:)), .9) );
 kymoThrInt = int8(double(kymoThr)./nanmax(double(kymoThr(:))));
 
 step1 = true;
@@ -86,7 +89,7 @@ if visualize
     axis equal tight
 
     subplot(2,1,2)
-    phandle = pcolor( double(int8(double(kymoThr)./nanmax(double(kymoThr(:))))) );
+    phandle = pcolor( double(kymoThr) );
     set( phandle , 'linestyle', 'none');
     set(gca, 'yDir', 'reverse');
     axis equal tight
