@@ -28,11 +28,18 @@ f = plot_snapshot_roi( mov, xy_roi, t);
 %% 
 outRoiName = 'out.roi';
 outRoiPath = fullfile(SourceDir, outRoiName);
-kymo2roi( kymogram, outRoiPath, 1 );
 
+% kymo2roi( kymogram, outRoiPath, 1 );
+
+clear xxx
 xxx = path_xyt(inRoiPath, outRoiPath);
 pix = xxx.apply_mask(tifPath, 10);
+
+movMasked= xxx.mask_outline(tifPath);
+xxx.visualize_mask(movMasked, 570);
+
 xxx.median()
 % xxx.mean()
+
 figure
 imagesc(pix')
