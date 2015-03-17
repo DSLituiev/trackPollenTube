@@ -25,7 +25,17 @@ classdef path_xyt<handle
     
     methods
         function obj = path_xyt( xy_roi, rt_roi, varargin )
-            
+            if nargin == 1 && isa(xy_roi,'path_xyt')
+                props = properties(xy_roi);
+                for i = 1:length(props)
+                    % Use Dynamic Expressions to copy the required property.
+                    % For more info on usage of Dynamic Expressions, refer to
+                    % the section "Creating Field Names Dynamically" in:
+                    % web([docroot '/techdoc/matlab_prog/br04bw6-38.html#br1v5a9-1'])
+                    obj.(props{i}) = xy_roi.(props{i});
+                end
+                return
+            end
             %% check the input parameters
             p = inputParser;
             p.KeepUnmatched = true;            
@@ -63,7 +73,72 @@ classdef path_xyt<handle
             obj.calc_bounds();            
 
         end
+        function [theta_normal, x0, y0] = normal(obj, tt, offset)
+            tt = max(2,tt);
+            r0  = max(1, obj.r(tt)   - offset);
+            rbk = max(1, obj.r(tt-1) - offset);
+            rfw = max(1, obj.r(tt+1) - offset);
+            
+            x0 = obj.x(r0);
+            y0 = obj.y(r0);
+            
+            dx = [obj.x(rfw) - x0,    x0 - obj.x(rbk)];
+            dy = [obj.y(rfw) - y0,    y0 - obj.y(rbk)];
+            
+            theta_normal = mean(atan2(dx, dy)) + pi/4;
+%             k_tangent = mean(dx./dy);
+%             k_normal = -1/k_tangent;
+%             b_normal = obj.y(r0) - k_normal * obj.x(r0);
+        end
         
+        function refine_path(obj, varargin)
+            %% check the input parameters
+            p = inputParser;
+            p.KeepUnmatched = true;            
+            addRequired(p, 'obj', @isobject);
+            addRequired(p, 'movPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && ( numel(size(x))==3 ) ) ) );
+            parse(p, obj, varargin{:});
+            %% arguments
+            if ~(numel(size(obj.mask)) == 3)
+                obj.xyt_mask( varargin{:} )
+            end
+            
+            if feval( @(x)(ischar(x) && exist(x, 'file')), p.Results.movPath)
+                mov = crop_movie(p.Results.movPath, obj, 2 * obj.radius);
+            else
+                mov = p.Results.movPath;
+            end
+            %%
+            x_adjustment = zeros(obj.T,1);
+            y_adjustment = zeros(obj.T,1);
+            for ii= 2:(numel(obj.t)-1)
+                tt = obj.t(ii);
+                if obj.r(tt) < obj.radius+2
+                    continue
+                end
+                [theta_normal, x0, y0] = obj.normal(tt, 0);
+                
+                RR = 1.5*obj.radius;
+                dr = - RR:1:RR;
+                dx = dr*cos(theta_normal);
+                dy = dr*sin(theta_normal);
+                xx = round(x0 + dx);
+                yy = round(y0 + dy);
+                pix = mov.sub2ind(yy, xx, tt);
+                r_adjustment = round(pix * dr'./sum(pix));   
+                x_adjustment(ii) = r_adjustment*cos(theta_normal);
+                y_adjustment(ii) = r_adjustment*sin(theta_normal);
+            end
+             obj.x = obj.x + round(x_adjustment);
+             obj.y = obj.y + round(y_adjustment);
+             
+             [x_, y_] = mov.xycropped(x0,y0);
+             figure; imagesc(mov.mov(:,:, tt));
+             axis equal
+             hold all; 
+             plot(xx,yy, 'k-', 'linewidth',1.5)
+             plot(x0,y0, 'kx', 'linewidth',2)
+        end
         function calc_bounds(obj)
             obj.vnRectBounds = [ max(1, floor(min(obj.y)) - obj.radius), max(1, floor(min(obj.x)) - obj.radius),  ...                                
                                  ceil(max(obj.y)) + obj.radius, ceil(max(obj.x)) + obj.radius];
@@ -172,9 +247,14 @@ classdef path_xyt<handle
             end
         end
         
-        function visualize_mask(obj, movMasked, tt)
+        function f = visualize_mask(obj, movMasked, tt, varargin)
             lw = 2;
-            figure; imagesc(movMasked(:,:,:,tt))
+            if nargin>3
+                f = figure(varargin{1});
+            else
+                f = figure;
+            end
+            imagesc(movMasked(:,:,:,tt))
             if obj.fast
                 hold all; plot(obj.x-obj.vnRectBounds(2) , obj.y-obj.vnRectBounds(1), 'g-', 'linewidth', lw)
             else

@@ -13,7 +13,7 @@ addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x
 addParamValue(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 addParamValue(p, 'EDGE_SIGMA',  16, @isscalar);
-addParamValue(p, 'EDGE_THRESH',  0, @isscalar);
+addParamValue(p, 'EDGE_THRESH',  [], @isscalar);
 addParamValue(p, 'KYMO_QUANTILE',  .8, @isscalar);
 
 parse(p, varargin{:});
@@ -41,15 +41,18 @@ kymoSmooth = paddedConv2( kymo , conv2(bf', bf) );
 [~,~,gv,gh] = edge(kymoSmooth,'sobel',p.Results.EDGE_THRESH);
 
 kymoEdge = edge(kymo,'canny', p.Results.EDGE_THRESH, p.Results.EDGE_SIGMA );
-kymoEdge(gv<0) = 0;
+% kymoEdge(gv(1:size(kymoEdge,1), 1:size(kymoEdge,2))<0) = 0;
 kymoEdgeOnlyFw = automatonFilterRemoveBackWardMovements(kymoEdge, p.Results.visualize);
 
 if p.Results.visualize
     figure
-    subplot(2,1,1)
-    imagesc(kymoEdge)
+    subplot(3,1,1)
+    imagesc(kymo)
 
-    subplot(2,1,2)
+    subplot(3,1,2)
+    imagesc(kymoEdge)
+    
+    subplot(3,1,3)
     imagesc(kymoEdgeOnlyFw)
 end
 

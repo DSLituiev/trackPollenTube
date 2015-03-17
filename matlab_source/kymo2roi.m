@@ -24,7 +24,7 @@ parse(p, varargin{:});
 %%
 includeDependencies( )
 
-%% extract the trace
+%% extract the object path
 [ z, kymoEdge ] = kymo2path( p.Results.tifPath,  p.Results, p.Unmatched );
 
 if p.Results.visualize
