@@ -38,8 +38,4 @@ pix = xxx.apply_mask(tifPath, 10);
 movMasked= xxx.mask_outline(tifPath);
 xxx.visualize_mask(movMasked, 570);
 
-xxx.median()
-% xxx.mean()
-
-figure
-imagesc(pix')
+xxx.plot_pixels()

@@ -10,7 +10,7 @@ Functionality
 
 2. Based on the path of the object tracked manually by the user on 2D `(x,y)`, returns:
 
-- a kymogram [dimensions: `(r,t)`]
+- a kymogram [ dimensions: `(r,t)`]
 
 - 2D `(r,t)` path of the object on the kymogram as a ImageJ ROI
 

@@ -223,41 +223,61 @@ classdef path_xyt<handle
                 varargout = {obj.pixels};
             end
         end
+        %% visualize
+        function varargout = plot_pixels(obj,varargin)            
+            if isempty(obj.pixels)
+                obj.apply_mask(varargin{:})
+            end
+            f = figure('name', 'pixel intensities');
+            spl(1) = subplot(2,1,1);
+            imagesc(obj.pixels')
+            ylabel('pixel index')
+            title('pixel intensities within the mask')
+            spl(2) = subplot(2,1,2);
+            yy = obj.median();
+            plot(1:numel(yy), yy)            
+            ylabel('median intensity')
+            xlabel('time (frames)')
+            set(spl, 'xlim', [1, obj.T])
+            if nargout > 0 
+                varargout = {f, obj.pixels};
+            end
+        end
         %% STATISTICS
         function y = median(obj, varargin)            
             %%
             if isempty(obj.pixels)
-                obj.apply_mask(varargin)
+                obj.apply_mask(varargin{:})
             end
-            y = median(obj.pixels, 2);
+            y = nanmedian(obj.pixels, 2);
         end
         function y = mean(obj, varargin)            
             %%
             if isempty(obj.pixels)
-                obj.apply_mask(varargin)
+                obj.apply_mask(varargin{:})
             end
-            y = mean(obj.pixels, 2);
+            y = nanmean(obj.pixels, 2);
         end
         function y = std(obj, varargin)            
             %%
             if isempty(obj.pixels)
-                obj.apply_mask(varargin)
+                obj.apply_mask(varargin{:})
             end
-            y = std(obj.pixels, 2);
+            y = nanstd(obj.pixels, 2);
         end
         function y = var(obj, varargin)            
             %%
             if isempty(obj.pixels)
-                obj.apply_mask(varargin)
+                obj.apply_mask(varargin{:})
             end
-            y = var(obj.pixels, 2);
+            y = nanvar(obj.pixels, 2);
         end
         function y = quantile(obj, p, varargin)            
             %%
             if isempty(obj.pixels)
-                obj.apply_mask(varargin)
+                obj.apply_mask(varargin{:})
             end
-            y = var(obj.pixels, p, 2);
+            y = quantile(obj.pixels, p, 2);
         end
     end
     
