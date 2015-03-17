@@ -9,3 +9,4 @@ test.pdf
 **/*.mexa64
 **/*.mexw64
 **/*.mex*
+matlab_source/edgeD.m
