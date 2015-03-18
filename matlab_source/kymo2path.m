@@ -14,8 +14,8 @@ addParamValue(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 addParamValue(p, 'EDGE_SIGMA',  8, @isscalar);
 addParamValue(p, 'EDGE_THRESH',  [], @isscalar);
-addParamValue(p, 'KYMO_QUANTILE',  .8, @isscalar);
-
+addParamValue(p, 'KYMO_QUANTILE',  .9, @isscalar);
+addParamValue(p, 'MEDIAN_RADIUS',  5, @isscalar);
 parse(p, varargin{:});
 %% read the file or copy the array
 if ischar(p.Results.tifPath)&& exist(p.Results.tifPath, 'file')
@@ -42,6 +42,8 @@ kymo(kymo > q) = q;
         % or dark on left and bright on right, we exlude the rest.
         [kymoEdge, ~, gr] = canny(kymo, sigma, threshold);
         kymoEdge( gr{2}-gr{1} < 0) = 0;
+        
+%         figure; imagesc(gr{2}-gr{1})
     end
 
 kymoEdge = raw_edge(single(kymo), p.Results.EDGE_SIGMA, p.Results.EDGE_THRESH );
@@ -62,7 +64,7 @@ end
 
 kymoEdgeOnlyFw(kymoEdgeOnlyFw<0) = 0;
 
-z =  edge2path( double(kymoEdgeOnlyFw) );
+z =  edge2path( double(kymoEdgeOnlyFw), p.Results.MEDIAN_RADIUS );
 
 end
 

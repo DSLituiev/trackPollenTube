@@ -17,7 +17,7 @@ tifPath = fullfile(SourceDir,  fileName);
 outRoiPath = fullfile(SourceDir, outRoiName);
 outImgPath = fullfile(SourceDir, outImg);
 
-kymo2roi2plot( tifPath, outRoiPath, outImg);
+kymo2roi2plot( tifPath, outRoiPath, outImgPath);
 
 return
 
