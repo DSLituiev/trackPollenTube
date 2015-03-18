@@ -30,22 +30,28 @@ classdef crop_movie
         end
         
         function out = sub2ind(obj, x0, y0, z)
-            if any(isnan(x0)) || any(isnan(y0)) || any(isnan(z))
+            if any(isnan(x0(:))) || any(isnan(y0(:))) || any(isnan(z(:)))
                 error('nan values!')
             end
             outliers_x = x0 <  obj.vnRectBounds(1) | x0 > obj.vnRectBounds(3);
             outliers_y = y0  <  obj.vnRectBounds(2) | y0 > obj.vnRectBounds(4) ;
             outliers = outliers_x | outliers_y;
             
-            x = x0 - obj.roi.vnRectBounds(1);
-            y = y0 - obj.roi.vnRectBounds(2);
+            x = x0 - obj.vnRectBounds(1);
+            y = y0 - obj.vnRectBounds(2);
             if size(z) == 1
                 z = repmat(z, size(x));
             end
             
+            if any(x(~outliers)<0) || any(y(~outliers)<0)
+                error()
+            end
+            
             out = NaN(size(outliers));
-            linearindex =  sub2ind( size(obj.mov), x(~outliers), y(~outliers), z(~outliers));
-            out(~outliers) = obj.mov(linearindex);
+            if any(~outliers)
+                linearindex =  sub2ind( size(obj.mov), x(~outliers), y(~outliers), z(~outliers));
+                out(~outliers) = obj.mov(linearindex);
+            end
         end
         
         function [x,y] = xycropped(obj,x,y)

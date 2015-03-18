@@ -34,14 +34,21 @@ a kymogram
 Pipeline / Workflow
 ===================
 
+    [remove_static_bg] : movie with static background --> (background-free) movie
+
     [movie2roi]
         [movie2kymo] : movie + x,y-ROI     -->  kymo
         [kymo2roi]   : kymo                -->  r,t-ROI
+        [kymo2roi2plot] : kymo + r,t-ROI   -->  plot
 
     [manual quality control]
 
-    [rois2intensities]
-        [rois2mask]        : x,y-ROI + r,t-ROI + radius  -->  x,y,t-mask
-        [mask2intensities] : movie + x,y,t-mask  -->  pixel intensities
+    [path_xyt]
+        [path_xyt (initialization)] : x,y-ROI + r,t-ROI  -->  x,y,t-path
+        [refine_path] : movie + x,y,t-path + radius --> refined x,y,t-path
+        [xyt_mask]  : x,y,t-path + radius --> mask
+        [apply_mask]  : movie + mask (= x,y,t-path + radius) --> pixel intensities
+
+
 
 

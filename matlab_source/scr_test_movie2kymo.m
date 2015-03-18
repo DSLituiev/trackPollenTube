@@ -45,7 +45,7 @@ kymo2roi( kymogram, outRoiPath, 1 );
 %%
 s=dbstatus;
 save('myBreakpoints.mat', 's');
-clear xxx yyy
+clear xxx
 load('myBreakpoints.mat');
 dbstop(s);
 
@@ -55,9 +55,14 @@ pix = xxx.apply_mask(tifPath, 10);
 movMasked= xxx.mask_outline(tifPath);
 xxx.visualize_mask(movMasked, tt);
 
+s=dbstatus;
+save('myBreakpoints.mat', 's');
+clear yyy
+load('myBreakpoints.mat');
+dbstop(s);
 
 yyy = path_xyt(xxx);
-yyy.refine_path(tifPath)
+yyy.refine_path(tifPath, 20, 2, 2, 'visualize', true)
 yyy.visualize_mask(movMasked, tt);
 
 

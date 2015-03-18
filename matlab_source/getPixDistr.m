@@ -22,13 +22,23 @@ if ~islogical(mask)
     warning('getPixDistr:NonLogicalMask', 'the mask must be of logical/boolean format')
 end
 
+delta_t = maskDim(3) - movDim(3);
+if delta_t > 0
+    if delta_t > 3
+        warning('time dimension mismatch')
+    else
+        mask = mask(:,:, 1:movDim(3));
+        maskDim = single(size(mask));
+    end
+end
+    
 if  numel(maskDim) == numel(movDim) && all(movDim == maskDim)
     reshMask = reshape( mask, prod(movDim([1,2])), T );
 elseif   numel(maskDim) < numel(movDim) && all(maskDim == movDim(1:numel(maskDim)))
     reshMask = repmat(mask(:), [1 T]);
     % mask = repmat(mask, [1,1, T]);    
 else
-    error('getPixDistr:DimensionMisMatch', 'the mask does not match the dimension of the movie')
+        error('getPixDistr:DimensionMisMatch', 'the mask does not match the dimension of the movie')
 end    
 
 
