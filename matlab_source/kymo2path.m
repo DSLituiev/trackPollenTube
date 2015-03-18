@@ -12,7 +12,7 @@ p.KeepUnmatched = true;
 addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==2) ) ));
 addParamValue(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
-addParamValue(p, 'EDGE_SIGMA',  16, @isscalar);
+addParamValue(p, 'EDGE_SIGMA',  8, @isscalar);
 addParamValue(p, 'EDGE_THRESH',  [], @isscalar);
 addParamValue(p, 'KYMO_QUANTILE',  .8, @isscalar);
 
@@ -34,21 +34,25 @@ end
 q = quantile(kymo(:), p.Results.KYMO_QUANTILE);
 kymo(kymo > q) = q;
 
-% kymoThr = normalizeKymogramZeroOne(kymoThr);
-bf = binomialFilter( p.Results.EDGE_SIGMA );
-kymoSmooth = paddedConv2( kymo , conv2(bf', bf) );
+    function kymoEdge = raw_edge(kymo, sigma, threshold)        
+        % uses a public domain canny routine which allows anisotropic sigma
+        % and can be [and is] modified to output gradient
+        % the gradient is used to exclude senseless edges
+        % as here one looks for edges from bright on top to dark on bottom,
+        % or dark on left and bright on right, we exlude the rest.
+        [kymoEdge, ~, gr] = canny(kymo, sigma, threshold);
+        kymoEdge( gr{2}-gr{1} < 0) = 0;
+    end
 
-[~,~,gv,gh] = edge(kymoSmooth,'sobel',p.Results.EDGE_THRESH);
+kymoEdge = raw_edge(single(kymo), p.Results.EDGE_SIGMA, p.Results.EDGE_THRESH );
 
-kymoEdge = edge(kymo,'canny', p.Results.EDGE_THRESH, p.Results.EDGE_SIGMA );
-% kymoEdge(gv(1:size(kymoEdge,1), 1:size(kymoEdge,2))<0) = 0;
-kymoEdgeOnlyFw = automatonFilterRemoveBackWardMovements(kymoEdge, p.Results.visualize);
+kymoEdgeOnlyFw = automatonFilterRemoveBackWardMovements(kymoEdge, 0);
 
 if p.Results.visualize
     figure
     subplot(3,1,1)
     imagesc(kymo)
-
+    
     subplot(3,1,2)
     imagesc(kymoEdge)
     

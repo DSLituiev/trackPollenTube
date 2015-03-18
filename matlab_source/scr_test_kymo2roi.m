@@ -8,8 +8,7 @@ includeDependencies( )
 % SourceDir = '../testcases/Christina/threshkymo/230614';
 % fileName = '3.tif';
 % outRoiName = 'out.roi';
-
-SourceDir = '../testcases/QAN_WT_017_23112012_Rg14burst';
+SourceDir = '../testcases/QAN_WT_028_14042013_Rg8burst';
 fileName = 'kymo.tif';
 outRoiName = 'out.roi';
 outImg = 'out.png';

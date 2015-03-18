@@ -1,4 +1,4 @@
-function [e, thresh] = canny(im, varargin)
+function [e, thresh, g] = canny(im, varargin)
 %CANNY is an implementation of the Canny edge detector
 %   E = CANNY(IM) takes a 2-D grey-level image or a 3-D array representing
 %   a volume and returns a 2-D or 3-D logical edge map using centred
@@ -196,8 +196,10 @@ function [e, thresh] = canny(im, varargin)
 %
 % See also: edge, gradients_n, nonmaxSuppress, hystThresh, imreconstruct,
 % griddedInterpolant
+% Modified by D S Lituiev, University of Zurich, 2015, to output the gradients
 
 % Sort arguments. Most checking done by other functions.
+
 inp = inputParser;
 checkthresh = @(t) checkattributes(t, {'numeric'}, ...
     {'nonnan' 'real' 'finite' 'nonnegative' 'nondecreasing'}) && ...

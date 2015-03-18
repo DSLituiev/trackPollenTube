@@ -38,9 +38,10 @@ classdef path_xyt<handle
             end
             %% check the input parameters
             p = inputParser;
-            p.KeepUnmatched = true;            
+            p.KeepUnmatched = true;
             addRequired(p, 'xy_roi', @(x)( (ischar(x) && exist(x, 'file') ) || isobject(x) ) );
             addRequired(p, 'rt_roi', @(x)( (ischar(x) && exist(x, 'file') ) || isobject(x) ) );
+            addOptional(p, 'interp1', 'pchip', @(x)strcmpi(x, {'linear','pchip'}) );
             addOptional(p, 'lag', 0, @isscalar );
             parse(p, xy_roi, rt_roi, varargin{:});
             %
@@ -51,16 +52,16 @@ classdef path_xyt<handle
             end
 
             if feval( @(x)(ischar(x) && exist(x, 'file')) , rt_roi)
-                rt_roi = CurveROI(rt_roi);
+                rt_roi = CurveROI(rt_roi, p.Results.interp1 );
             end
 %             if abs(numel(xy_roi.x) - max(rt_roi.x)) > 2
 %                 warning('dimension mismatch between the (x,y) and (r,t) kymograms')
 %             end
 
-            obj.T = round(max(rt_roi.x));
+            obj.T = ceil(max(rt_roi.x));
             obj.t = (1:obj.T)';        
             
-            obj.r = 1 + round( interp1(rt_roi.x, rt_roi.y, obj.t) );  
+            obj.r = 1 + round( interp1(rt_roi.x, rt_roi.y, obj.t, p.Results.interp1, 'extrap') );  
             obj.L = max(obj.r);
             
             

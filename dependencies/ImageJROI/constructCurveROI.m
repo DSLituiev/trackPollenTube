@@ -32,7 +32,7 @@ PTroi.y0  = PTroi.mnCoordinates(:,2);
 r0 = (1+[0;cumsum(dx0)] );
 r = 1+(0:1:round(N0))';
 
-xy = interp1(r0', PTroi.mnCoordinates, r, interpType);
+xy = interp1(r0', PTroi.mnCoordinates, r, interpType, 'extrap');
 
 PTroi.x = xy(:,1);
 PTroi.y = xy(:,2);
