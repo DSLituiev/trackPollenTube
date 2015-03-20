@@ -1,12 +1,13 @@
 function FinalImage = readTifSelected(FileTif, varargin)
 %% check the input parameters
 p = inputParser;
-p.KeepUnmatched = true;            
+p.KeepUnmatched = true;
 addRequired(p, 'FileTif', @(x)(ischar(x) && exist(x, 'file')) );
 addOptional(p, 'rowRange', [1, Inf], @isnumeric );
 addOptional(p, 'colRange', [1, Inf], @isnumeric );
+addOptional(p, 'frameRange', [1, Inf], @isnumeric );
 parse(p, FileTif, varargin{:});
-%% 
+%%
 InfoImage    = imfinfo(FileTif);
 NumberImages = length(InfoImage);
 
@@ -27,13 +28,24 @@ colEnd   =  min(p.Results.colRange(2), InfoImage(1).Width);
 rowStartRound = rows_per_strip * floor((rowStart-1)/rows_per_strip)+1;
 rowEndRound   = rows_per_strip * ceil(rowEnd/rows_per_strip);
 
-FinalImage   = zeros(rowEndRound-rowStartRound+1, colEnd-colStart+1, NumberImages,'uint16');
 
 %== create a column cropping structure for 'subsref' function
 S.type = '()';
 S.subs = {':',colStart:1:colEnd};
 
-for zz = 1:NumberImages
+if ~isempty(p.Results.frameRange) 
+    if numel(p.Results.frameRange) ==2 && (p.Results.frameRange(end) < Inf)
+        frames = max(1, p.Results.frameRange(1)):1:min(NumberImages, p.Results.frameRange(2));
+    else
+        frames = p.Results.frameRange;
+    end
+else
+    frames = 1:NumberImages;
+end
+
+FinalImage   = zeros(rowEndRound-rowStartRound+1, colEnd-colStart+1, numel(frames),'uint16');
+
+for zz = frames
     FileID.setDirectory(zz);
     %= Go through each strip of data.
     for r = rowStartRound:rows_per_strip:rowEndRound
@@ -54,5 +66,5 @@ end
 if size(FinalImage,2) ~= colEnd -colStart +1
     warning('readTifSelected:DimensionMismatch', 'Column number mismatch while reading\t%s!\n',FileTif)
 end
-    
+
 FileID.close();
