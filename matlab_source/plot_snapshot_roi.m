@@ -2,7 +2,12 @@ function [ f ] = plot_snapshot_roi( mov, xy_roi, t)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
-f = figure;
+if t > size(mov,3)
+    t = floor( size(mov,3) / 3 );
+end
+
+f = figure('name', sprintf('frame %u', t));
+
 imagesc( mov(:,:, t ))
 hold all
 plot(xy_roi.x, xy_roi.y, 'w-', 'linewidth', 2.5)

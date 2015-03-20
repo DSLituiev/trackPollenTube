@@ -6,9 +6,9 @@ clc
 includeDependencies( )
 % addpath('/usr/local/MATLAB/R2013b/bin/glnxa64/') % libtiff
 %% define path to the files
-SourceDir = '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
-fileName = 'dsRed-a-b.tif';
-inRoiName = 'path.roi';
+SourceDir = '/home/dima/data/pollen_tubes/Hannes PT Growth'; % '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
+fileName = '1sec_delay5.tif'; % 'dsRed-a-b.tif';
+inRoiName = '1sec_delay5.roi'; % 'path.roi';
 outKymoName = 'kymo.tif';
 
 tifPath = fullfile(SourceDir, fileName); 
@@ -37,7 +37,7 @@ tt = 364; % ceil(size(mov,3)*4/5);
 f = plot_snapshot_roi( mov, xy_roi, tt);
 
 %% 
-outRoiName = 'out.roi';
+outRoiName = 'kymo.roi';
 outRoiPath = fullfile(SourceDir, outRoiName);
 
 kymo2roi( kymogram, outRoiPath, 1 );
@@ -50,7 +50,7 @@ load('myBreakpoints.mat');
 dbstop(s);
 
 xxx = path_xyt(inRoiPath, outRoiPath);
-pix = xxx.apply_mask(tifPath, 10);
+pix = xxx.apply_mask(tifPath, 50);
 
 movMasked= xxx.mask_outline(tifPath);
 xxx.visualize_mask(movMasked, tt);

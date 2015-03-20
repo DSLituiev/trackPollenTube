@@ -26,12 +26,12 @@ p.KeepUnmatched = true;
 
 addRequired(p, 'movPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
 addRequired(p, 'roiPath', @(x)(ischar(x) && exist(x, 'file')) );
-addOptional(p, 'kymoPath', '', @writable );
+addOptional(p, 'kymoPath', false, @(x)( islogical(x) || x==0 || x==1 || writable(x) )  );
 addParamValue(p, 'interpolation', 'l2', @(x)(any(strcmpi(x,{'l1', 'l2', 'm4'}))) );
 addParamValue(p, 'm4epsilon', 16, @isscalar );
-addParamValue(p, 'pad', 0, @isscalar );
+addParamValue(p, 'pad', 10, @isscalar );
 parse(p, varargin{:});
-%% read roi
+%% read input roi
 roi = CurveROI(p.Results.roiPath);
 %% read movie
 if feval( @(x)(ischar(x) && exist(x, 'file')) , p.Results.movPath)
@@ -47,13 +47,22 @@ roi.y = roi.y - roi.vnRectBounds(1) + p.Results.pad;
 %% construct kymogram
 kymogram = constructKymogram(roi, mov, p.Results.interpolation, p.Results.m4epsilon);
 %% save the kymogram if requested
-if ~isempty(p.Results.kymoPath)    
+if ischar(p.Results.kymoPath)
+    kymoPath = p.Results.kymoPath;
+elseif p.Results.kymoPath
+    pathstr = fileparts(p.Results.tifPath);
+    kymoPath = fullfile(pathstr, 'kymo.tif');
+else
+    kymoPath = '';
+end
+
+if  ~isempty( kymoPath )
     opts= {};
     fn = fieldnames(p.Unmatched);
     for ii = 1:numel(fn)
         opts = {opts{:}, fn{ii}, p.Unmatched.(fn{ii})};
     end
-    imwrite(kymogram, p.Results.kymoPath, opts{:})
+    imwrite(kymogram, kymoPath, opts{:})
 end
 
 end
