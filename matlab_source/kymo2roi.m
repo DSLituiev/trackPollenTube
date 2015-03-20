@@ -1,4 +1,4 @@
-function [ t,z, status ] = kymo2roi( varargin )
+function [ rt_roi, status ] = kymo2roi( varargin )
 %KYMO2ROI -- extract edge ROI from a thresholded kymogram
 %
 % Syntax:
@@ -9,7 +9,9 @@ function [ t,z, status ] = kymo2roi( varargin )
 % ======
 % - tifPath    -- path to the input `tif` file (of a kymogram)
 %                 OR a kymogram per se
-% - outRoiPath -- path to the output `roi` file
+% - outRoiPath -- path to the output `roi` file (optional, file path OR boolean, default = false)
+%                 if set to `true` saves into directory of tifPath
+%                 under the `kymo.tif` name.
 % - rotate     -- rotate the input image (optional, boolean, default = false)
 % - visualize  -- plot the results       (optional, boolean, default = false)
 %% check the input parameters
@@ -17,7 +19,7 @@ p = inputParser;
 p.KeepUnmatched = true;
 
 addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==2) ) ) );
-addRequired(p, 'outRoiPath', @(x)(ischar(x)));
+addOptional(p, 'outRoiPath', false, @(x)( islogical(x) || x==0 || x==1 || writable(x) )  );
 addOptional(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 parse(p, varargin{:});
@@ -71,10 +73,25 @@ t = 1:T;
 %     
 % end
 %% write
-if p.Results.rotate    
-    status = writeImageJRoi(p.Results.outRoiPath, 'PolyLine', uint16(z(ind)),  uint16(t(ind)) );
+if p.Results.rotate
+    rt_roi = CurveROI('PolyLine', uint16(z(ind)),  uint16(t(ind)));
 else
-    status = writeImageJRoi(p.Results.outRoiPath, 'PolyLine',  uint16(t(ind)),  uint16(z(ind)) );
+    rt_roi = CurveROI('PolyLine',  uint16(t(ind)), uint16(z(ind)));
+end
+
+if ischar(p.Results.outRoiPath)
+    outRoiPath = p.Results.outRoiPath;
+elseif p.Results.outRoiPath
+    pathstr = fileparts(p.Results.tifPath);
+    outRoiPath = fullfile(pathstr, 'kymo.roi');
+else
+    outRoiPath = '';
+end
+
+if ~isempty(outRoiPath)
+    status = rt_roi.write(p.Results.outRoiPath);
+else 
+    status = -1;
 end
 
 end
