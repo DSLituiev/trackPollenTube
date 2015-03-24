@@ -97,6 +97,25 @@ else
     z = fastmedfilt1d(z, p.Results.MEDIAN_RADIUS);
 end
 
+%% go backwards to remove jumps
+R = 5;
+for tt = floor(T/3):-1:2
+    if z(tt) > 0 && kymoEdge(z(tt), tt)
+        jj = 0;
+        while (z(tt-1) - jj -1 > 0) && (kymoEdge(z(tt-1) - jj -1, tt))
+            jj = jj + 1;
+        end
+        if jj < R && (z(tt-1) - jj -1 > 1 )
+            z(tt-1) = z(tt) - jj;
+        else
+            z(tt-1) = z(tt);
+        end
+    elseif  z(tt-1) > 0 && ~ kymoEdge(z(tt-1), tt)
+        z(tt-1) = z(tt);
+    end
+end
+% figure; plot(z)
+%% make z non-decreasing
 for tt = 2:T
     if z(tt) < z(tt-1)
         z(tt) = z(tt-1);
@@ -106,6 +125,7 @@ for tt = 2:T
         z(tt) = z(tt);
     end
 end
+% hold all; plot(z)
 
 end
 
