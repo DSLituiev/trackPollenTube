@@ -81,7 +81,7 @@ end
 
 % figure; plot(tts, lls); set(gca, 'Ydir', 'reverse')
 
-if (numel(tts) == T) && all(diff(tts) == 1)
+if (numel(lls) == T) && all(diff(tts) == 1)
     z = fastmedfilt1d(lls, p.Results.MEDIAN_RADIUS);
 else
     lls = fastmedfilt1d(lls, p.Results.MEDIAN_RADIUS);
@@ -96,25 +96,6 @@ else
     end
     z = fastmedfilt1d(z, p.Results.MEDIAN_RADIUS);
 end
-
-%% go backwards to remove jumps
-R = 5;
-for tt = floor(T/3):-1:2
-    if z(tt) > 0 && kymoEdge(z(tt), tt)
-        jj = 0;
-        while (z(tt-1) - jj -1 > 0) && (kymoEdge(z(tt-1) - jj -1, tt))
-            jj = jj + 1;
-        end
-        if jj < R && (z(tt-1) - jj -1 > 1 )
-            z(tt-1) = z(tt) - jj;
-        else
-            z(tt-1) = z(tt);
-        end
-    elseif  z(tt-1) > 0 && ~ kymoEdge(z(tt-1), tt)
-        z(tt-1) = z(tt);
-    end
-end
-% figure; plot(z)
 %% make z non-decreasing
 for tt = 2:T
     if z(tt) < z(tt-1)
@@ -125,7 +106,40 @@ for tt = 2:T
         z(tt) = z(tt);
     end
 end
+
+% figure;
+% imagesc(kymoEdge);
+% hold all
+% plot(z)
+%% go backwards to remove jumps
+R = 10; % admissible jump
+for tt = T:-1:2 % floor(T/3):-1:2
+    if z(tt) > 0 && kymoEdge(z(tt), tt)
+        jj = 0;
+        while (z(tt) - jj> 0) && ~ kymoEdge(z(tt) - jj, tt-1)
+            jj = jj + 1;
+        end
+        if jj < R && ( z(tt) - jj -1 > 1 )
+            z(tt-1) = z(tt) - jj;
+        else
+            z(tt-1) = z(tt);
+        end
+%     elseif  z(tt-1) > 0 || z(tt-1) - z(tt) > R
+%         z(tt-1) = z(tt);
+    end
+end
+
 % hold all; plot(z)
+%% make z non-decreasing
+for tt = 2:T
+    if z(tt) < z(tt-1)
+        z(tt) = z(tt-1);
+    elseif z(tt) < z(tt-1)
+        z(tt) = z(tt-1);
+    else
+        z(tt) = z(tt);
+    end
+end
 
 end
 
