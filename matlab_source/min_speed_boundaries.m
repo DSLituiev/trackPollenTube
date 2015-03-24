@@ -16,6 +16,9 @@ for kk = 1:numel( large_bnds )
         while abs(dx(jj)) < abs(dx(ii)) || flag_wrong_side
             ii = ii - 1;
             jj = jj - 1;
+            if jj == 0
+                break
+            end
             if abs(dx(jj)) < abs(dx(ii))
                 flag_wrong_side = false;
             end
@@ -32,6 +35,9 @@ for kk = 1:numel( large_bnds )
         while abs(dx(jj)) < abs(dx(ii))|| flag_wrong_side
             ii = ii + 1;
             jj = jj + 1;
+            if jj == numel(dx)
+                break
+            end
             if abs(dx(jj)) < abs(dx(ii))
                 flag_wrong_side = false;
             end

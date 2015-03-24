@@ -38,21 +38,10 @@ if p.Results.visualize
 end
 
 %% analyse the speed
-[ ind ] = bendings( z, p.Results, p.Unmatched);
+[ ind ] = bendings( z, p.Results, 'visualize', p.Results.visualize, p.Unmatched);
 
-%% plot speed 
 T = numel(z);
 t = (1:T)';
-% 
-if p.Results.visualize
-%     figure
-%     ax(1) = subplot(3,1,1);
-%     plot(t, z );
-%     hold all
-%     plot(t(ind), z(ind), 'r+' );
-%     xlabel('time')
-%     ylabel('z')
-end
 %% write
 if p.Results.rotate
     rt_roi = CurveROI('PolyLine', uint16(z(ind)),  uint16(t(ind)));
