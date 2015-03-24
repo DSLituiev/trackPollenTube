@@ -28,17 +28,10 @@ end
 PTroi.x0 = PTroi.mnCoordinates(:,1);
 PTroi.y0  = PTroi.mnCoordinates(:,2);
 
-[N0, dx0] = arclength(PTroi.x0 , PTroi.y0, p.Results.interp1);
+%%
+[PTroi.x, PTroi.y, arc_length] = interp_implicit(PTroi.x0, PTroi.y0, p.Results.interp1);
 
-r0 = (1+[0;cumsum(dx0)] );
-r = 1+(0:1:round(N0))';
-
-xy = interp1(r0', PTroi.mnCoordinates, r, p.Results.interp1, 'extrap');
-
-PTroi.x = xy(:,1);
-PTroi.y = xy(:,2);
-
-PTroi.L = round(N0)+1;
+PTroi.L = round(arc_length)+1;
 
 %== frame
 PTroi.frame = [PTroi.vnRectBounds(1), PTroi.vnRectBounds(2); PTroi.vnRectBounds(3), PTroi.vnRectBounds(4)]+1;
