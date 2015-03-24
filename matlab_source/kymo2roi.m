@@ -19,7 +19,7 @@ p = inputParser;
 p.KeepUnmatched = true;
 
 addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==2) ) ) );
-addOptional(p, 'outRoiPath', false, @(x)( islogical(x) || x==0 || x==1 || writable(x) )  );
+addOptional(p, 'outRoiPath', false, @(x)(writable(x) || islogical(x) || x==0 || x==1   )  );
 addOptional(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 parse(p, varargin{:});
@@ -42,9 +42,9 @@ end
 
 %% plot speed 
 T = numel(z);
-t = 1:T;
+t = (1:T)';
 % 
-% if visualize
+if p.Results.visualize
 %     figure
 %     ax(1) = subplot(3,1,1);
 %     plot(t, z );
@@ -52,26 +52,7 @@ t = 1:T;
 %     plot(t(ind), z(ind), 'r+' );
 %     xlabel('time')
 %     ylabel('z')
-% 
-%     ax(2) = subplot(3,1,2);
-%     plot(t(1:end-1), dz ); hold all
-%     plot(t(ind), dz(min(ind, numel(dz))), 'rx'  );
-%     ylim([0, min(2, 0.1*ceil(10*max(dz))) ])
-%     hold all
-%     plot([1, T], [0, 0], 'k-')
-%     xlabel('time')
-%     ylabel('speed')
-% 
-%     ax(3) = subplot(3,1,3);
-%     plot(t(2:end-1), ddz );
-%     hold all
-%     plot(t(ind), ddz(min(max(ind-1, 1), numel(ddz) ) ), 'rx' )
-%     xlabel('time')
-%     ylabel('acceleration')
-%     
-%     set(ax, 'xlim', [0, T])
-%     
-% end
+end
 %% write
 if p.Results.rotate
     rt_roi = CurveROI('PolyLine', uint16(z(ind)),  uint16(t(ind)));

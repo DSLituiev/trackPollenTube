@@ -1,3 +1,5 @@
+img.tar.gz
+img/
 matlab_source/.fuse_hidden*
 dependencies/**/*.mex*
 matlab_source/myBreakpoints.mat

@@ -3,7 +3,7 @@ function f = plot_roi_on_kymo(varargin)
 p = inputParser;
 p.KeepUnmatched = true;
 
-addRequired(p, 'roiPath', @(x)( (ischar(x) && exist(x, 'file')) || isstruct(x) ) );
+addRequired(p, 'roiPath', @(x)( (ischar(x) && exist(x, 'file')) || isobject(x) || isstruct(x) ) );
 addRequired(p, 'kymoPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && sum(size(x)>1))==2) );
 addOptional(p, 'outImgPath', '', @(x)(ischar(x)));
 addOptional(p, 'format', '', @(x)(ischar(x)));
