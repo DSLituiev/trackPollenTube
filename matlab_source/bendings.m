@@ -52,6 +52,7 @@ bnd = cat(xdim, 1, bnd, numel(ddx));
         sqddx = zeros(size(bnd));
         l_midpoint =  [0; floor((bnd(1:end-2) + bnd(2:end-1))/2);0];
         r_midpoint =  [0; floor((bnd(2:end-1) + bnd(3:end))/2); 0];
+        r_midpoint(r_midpoint> numel(ddx)) = numel(ddx);
         for ii = 2:numel(bnd)-1
             %             l_midpoint =  floor((bnd(ii-1) + bnd(ii))/2);
             %             r_midpoint = floor((bnd(ii) + bnd(ii+1))/2);
@@ -83,11 +84,6 @@ sqddx = sum_square_ddx(ddx, bnd);
 bnd = sort([bnd(sqddx > p.Results.threshold_sqddx)-3; bnd(sqddx > p.Results.threshold_sqddx)-5; bnd]);
 bnd = bnd(bnd>=1);
 
-%% add end points
-bnd = cat(xdim, 1, bnd, T);
-bnd = bnd(diff(bnd) > 0);
-sqddx = sum_square_ddx(ddx, bnd);
-
 %% optimization
 
     function fun= interp_error(ind, z, t, varargin)
@@ -116,10 +112,18 @@ sqddx = sum_square_ddx(ddx, bnd);
         fun =  nansum( (z - z_interp).^2 );
     end
 
-heuristic_bnd = bnd;
+%% add end points
+bnd = cat(xdim, 1, bnd, T);
+bnd = [bnd(diff(bnd) > 0); bnd(end)];
 
+%% optimise
+heuristic_bnd = bnd;
 bnd = sort(round(fminsearch(@(y)interp_error(y, p.Results.x,t), bnd)));
 
+%% add end points
+bnd = cat(xdim, 1, bnd, T);
+bnd = [bnd(diff(bnd) > 0); bnd(end)];
+sqddx = sum_square_ddx(ddx, bnd);
 
 % figure
 % stem(t(bnd), sqddx, 'rx');
@@ -141,7 +145,9 @@ if p.Results.visualize
     hold all
     plot(bnd, x(bnd), 'ro' );
     [t_ , x_] = interp_implicit(bnd, x(bnd));
-    plot(t_, x_, 'r-' );
+    plot(t_, x_, 'r-' );    
+    set(gca, 'xlim', [0, T])
+    
     %% plot the derivatives
     nrow = 4;
     figure
