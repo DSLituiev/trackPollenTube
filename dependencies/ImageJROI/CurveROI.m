@@ -1,4 +1,4 @@
-classdef CurveROI < ImageJROI
+classdef CurveROI < ImageJROI & modifiable_line
     
     properties
         x
@@ -30,7 +30,8 @@ classdef CurveROI < ImageJROI
             end
         end
         
-        function ff = plot(obj, ptFrame, varargin)
+        %{
+        function ff = plot(obj, img, varargin)
             
             %% check the input parameters
             p = inputParser;
@@ -49,22 +50,22 @@ classdef CurveROI < ImageJROI
             addParamValue(p, 'tick_spacing', 100, @isscalar );
             addParamValue(p, 'pointSpacing', 25, @isscalar );
             addParamValue(p, 'color', 'm', @(x)(isnumeric(x) || ischar(x)) )
-            parse(p, ptFrame, varargin{:});
+            parse(p, img, varargin{:});
             %%
-            if readable(ptFrame)
-                imsize = get_tiff_size(ptFrame);
+            if readable(img)
+                imsize = get_tiff_size(img);
                 if imsize(3) == 1
-                    ptFrame = imread(ptFrame);
+                    img = imread(img);
                 else
-                    ptFrame = cropRectRoiFast(ptFrame, obj, p.Results.pad, p.Results.tt);
+                    img = cropRectRoiFast(img, obj, p.Results.pad, p.Results.tt);
                 end
             end
             
             ff = figure;
             if p.Results.rotate
-                imagesc(ptFrame')
+                imagesc(img')
             else
-                imagesc(ptFrame)
+                imagesc(img)
             end
             colormap gray
             hold on
@@ -83,8 +84,8 @@ classdef CurveROI < ImageJROI
                 end
                 axis  equal tight
                 set(gca, 'tickdir', 'out', ...
-                    'xtick', 0:p.Results.tick_spacing:size(ptFrame,1),...
-                    'ytick', 0:p.Results.tick_spacing:size(ptFrame,2))                
+                    'xtick', 0:p.Results.tick_spacing:size(img,1),...
+                    'ytick', 0:p.Results.tick_spacing:size(img,2))                
             else
                 plot(obj.x, obj.y, 'w-', 'linewidth',  p.Results.linewidth+1)
                 plot(obj.x, obj.y, '-', 'color', p.Results.color, 'linewidth',  p.Results.linewidth)
@@ -99,13 +100,14 @@ classdef CurveROI < ImageJROI
                 end
                 axis  equal tight
                 set(gca, 'tickdir', 'out', ...
-                    'xtick', 0:p.Results.tick_spacing:size(ptFrame,2),...
-                    'ytick', 0:p.Results.tick_spacing:size(ptFrame,1))
+                    'xtick', 0:p.Results.tick_spacing:size(img,2),...
+                    'ytick', 0:p.Results.tick_spacing:size(img,1))
             end
             xlabel( p.Results.x, 'interpreter', 'latex', 'fontsize', p.Results.fontSize)
             ylabel( p.Results.y,  'interpreter', 'latex', 'fontsize', p.Results.fontSize)
             fig(ff)
         end
+        %}
     end
     
 end

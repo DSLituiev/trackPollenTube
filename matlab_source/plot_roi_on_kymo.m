@@ -11,7 +11,7 @@ addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 parse(p, varargin{:});
 %% read
 if (ischar(p.Results.roiPath) && exist(p.Results.roiPath, 'file'))
-    [path] = constructCurveROI(p.Results.roiPath);
+    [path] = CurveROI(p.Results.roiPath);
 elseif isstruct(p.Results.roiPath)
     path = p.Results.roiPath;
 end
@@ -22,15 +22,9 @@ elseif isnumeric(p.Results.kymoPath)
     kymo = p.Results.kymoPath;
 end
 %% plot the ROI
-f = figure;
-imagesc(kymo)
-hold all
-plot( path.x, path.y, 'w-', 'linewidth',3 )
-plot( path.x, path.y, 'm-', 'linewidth',2 )
-plot( path.x0, path.y0, 'w+', 'markersize',13 , 'linewidth', 3)
-plot( path.x0, path.y0, 'm+', 'markersize',12 , 'linewidth', 2)
+path.img = kymo;
+f = path.plot();
 
-set(gca, 'ydir', 'reverse')
 xlabel('time')
 ylabel('coordinate')
 %% export

@@ -1,4 +1,4 @@
-classdef ImageJROI
+classdef ImageJROI < handle
     
     properties
         nNumCoords
