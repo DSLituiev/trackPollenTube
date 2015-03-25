@@ -30,6 +30,10 @@ classdef CurveROI < ImageJROI & modifiable_line
             end
         end
         
+        function save(inpobj, ~, obj, varargin)
+            fprintf('TO DO : saving function in the subclass `%s`\n', class(obj) );
+            % obj.write();
+        end
         %{
         function ff = plot(obj, img, varargin)
             

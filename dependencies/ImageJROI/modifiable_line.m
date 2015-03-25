@@ -78,7 +78,34 @@ classdef modifiable_line < handle
             obj.ss = scatter(obj.x0, obj.y0,  p.Results.markersize, clr, p.Results.markertype);
             
             set(get(obj.ss, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@startDragFcn, obj})
+            
+            set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
             varargout = {obj.f};
+            % Create push button
+            btn = uicontrol('Style', 'pushbutton', 'String', 'Save',...
+                'Position', [20 20 50 20],...
+                'Callback', {@save, obj});
+                        
+        end
+        
+        function save(inpobj, ~, obj, varargin)
+            fprintf('saving function has not been defined in the subclass `%s`\n', class(obj) );
+        end
+        
+        function addPointFcn(~,~, obj, varargin)
+            rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
+            if rightClick
+                pt = get(gca, 'CurrentPoint');
+                x_ = pt(1,1);
+                y_ = pt(1,2);
+                
+                obj.x0 = sort([obj.x0; x_]);
+                obj.y0 = sort([obj.y0; y_]);
+                set([obj.ss, obj.ssbg],'XData', obj.x0);
+                set([obj.ss, obj.ssbg],'YData', obj.y0);
+                set(get(obj.ss, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@startDragFcn, obj})
+                drawnow
+            end
         end
         
         function stopDragFcn(~,~, obj, varargin)
@@ -87,8 +114,16 @@ classdef modifiable_line < handle
         
         function startDragFcn(~, ~, obj, varargin)
             rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
-            
-            set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, rightClick, varargin{:}})
+            if ~rightClick
+                set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, rightClick, varargin{:}})
+            else
+                chldrn = get(obj.ss, 'children');
+                logInd = flipud( chldrn == gco) ;
+                obj.x0 = obj.x0(~logInd);
+                obj.y0 = obj.y0(~logInd);
+                delete(gco);
+                obj.redraw();
+            end
         end
         
         function dragginFcn(~,~,obj, rightClick, varargin)
@@ -106,21 +141,12 @@ classdef modifiable_line < handle
                 set(gco, 'xData', pt(1,1))
                 set(gco, 'yData', pt(1,2))
                 
-                obj.interp;
                 
                 fprintf('x:\t%f\t%f\t', obj.x0(logInd), x_ )
                 fprintf('y:\t%f\t%f\n', obj.y0(logInd), y_ )
-            else
-                obj.x0 = obj.x0(~logInd);
-                obj.y0 = obj.y0(~logInd);
-                delete(gco);  
-%                 set(obj.ss,'children', chldrn(flipud(logInd)) );
+                
+                obj.redraw();
             end
-            
-            set(obj.ll,   'xData', obj.x, 'yData', obj.y)
-            set(obj.llbg, 'xData', obj.x, 'yData', obj.y)
-            set(obj.ssbg, 'xData', obj.x0, 'yData', obj.y0)
-            
         end
         
         function interp(obj)
@@ -130,6 +156,13 @@ classdef modifiable_line < handle
             else
                 [obj.x, obj.y] = interp_implicit(obj.x0, obj.y0, obj.interp1);
             end
+        end
+        function redraw(obj)
+            set(obj.ssbg, 'xData', obj.x0, 'yData', obj.y0)
+            
+            obj.interp;
+            set(obj.ll,   'xData', obj.x, 'yData', obj.y)
+            set(obj.llbg, 'xData', obj.x, 'yData', obj.y)
         end
         
     end
