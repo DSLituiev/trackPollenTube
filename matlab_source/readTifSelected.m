@@ -34,10 +34,8 @@ S.type = '()';
 S.subs = {':',colStart:1:colEnd};
 
 if ~isempty(p.Results.frameRange) 
-    if numel(p.Results.frameRange) ==2 && (p.Results.frameRange(end) < Inf)
+    if numel(p.Results.frameRange) ==2
         frames = max(1, p.Results.frameRange(1)):1:min(NumberImages, p.Results.frameRange(2));
-    else
-        frames = p.Results.frameRange;
     end
 else
     frames = 1:NumberImages;

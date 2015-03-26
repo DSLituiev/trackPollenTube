@@ -113,6 +113,9 @@ classdef crop_movie
             end
         end
         
+        function fullframe(tt)
+            
+        end
         
         %         function ind = subsindex(obj)
         %             ind = obj.mov;

@@ -18,7 +18,7 @@ function [PTroi, varargout] = constructCurveROI(PTroi, varargin)
 p = inputParser;
 p.KeepUnmatched = true;
 addRequired(p, 'PTroi', @(x)( (ischar(x) && exist(x, 'file') ) || isobject(x) || isstruct(x) ) );
-addOptional(p, 'interp1', 'pchip', @(x)strcmpi(x, {'linear','pchip'}) );
+addOptional(p, 'interp1', 'pchip', @(x)any(strcmpi(x, {'linear','pchip'})) );
 parse(p, PTroi, varargin{:});
 %% read roi if a file path is provided
 if feval( @(x)(ischar(x) && exist(x, 'file')) , PTroi)

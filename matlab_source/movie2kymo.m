@@ -24,9 +24,9 @@ function [ kymogram, mov, roi ] = movie2kymo( varargin )
 p = inputParser;
 p.KeepUnmatched = true;
 
-addRequired(p, 'movPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
-addRequired(p, 'roiPath', @(x)(ischar(x) && exist(x, 'file')) );
-addOptional(p, 'kymoPath', false, @(x)( islogical(x) || x==0 || x==1 || writable(x) )  );
+addRequired(p, 'movPath', @(x)(readable(x) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
+addRequired(p, 'roiPath', @readable );
+addOptional(p, 'kymoPath', false, @(x)( isempty(x) || islogical(x) || x==0 || x==1 || writable(x) )  );
 addParamValue(p, 'interpolation', 'l2', @(x)(any(strcmpi(x,{'l1', 'l2', 'm4'}))) );
 addParamValue(p, 'm4epsilon', 16, @isscalar );
 addParamValue(p, 'pad', 10, @isscalar );

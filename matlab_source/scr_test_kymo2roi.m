@@ -17,7 +17,8 @@ tifPath = fullfile(SourceDir,  fileName);
 outRoiPath = fullfile(SourceDir, outRoiName);
 outImgPath = fullfile(SourceDir, outImg);
 
-
+%% read the roi and overay it over the kymogram
+% f = plot_roi_on_kymo(outRoiPath, tifPath, outImg, 'png', 'Resolution', 300);
 %% segment the kymogram and save the roi
 [~, status] = kymo2roi( tifPath, outRoiPath,  0);
 if status < 0

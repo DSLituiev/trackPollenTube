@@ -50,7 +50,7 @@ classdef modifiable_line < handle
             obj.y0 = obj.y0_bu; % back up
         end
         
-        function varargout = plot(obj, varargin)
+        function varargout = plot(obj, img, varargin)
             %% check the input parameters
             p = inputParser;
             p.KeepUnmatched = true;
@@ -61,7 +61,9 @@ classdef modifiable_line < handle
             addParamValue(p, 'color', '', @(x)(isscalar(x) || isnumeric(x) ));
             parse(p, varargin{:});
             %%
-            
+            if nargin> 1
+                obj.img = img;
+            end
             if ~isempty(obj.img)
                 imagesc(obj.img)
                 hold all;

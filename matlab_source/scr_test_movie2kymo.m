@@ -35,13 +35,15 @@ imwrite(kymogram, outKymoPath)
 
 tt = 364; % ceil(size(mov,3)*4/5);
 f = plot_snapshot_roi( mov, xy_roi, tt);
+xy_roi.plot(mov(:,:,tt));
 
+xy_roi.plot([]);
 %% 
 outRoiName = 'kymo.roi';
 outRoiPath = fullfile(SourceDir, outRoiName);
 
-kymo2roi( kymogram, outRoiPath, 1 );
-
+rt_roi = kymo2roi( kymogram, outRoiPath, 1 );
+rt_roi.plot(kymogram);
 %%
 s=dbstatus;
 save('myBreakpoints.mat', 's');
@@ -53,7 +55,7 @@ xxx = path_xyt(inRoiPath, outRoiPath);
 pix = xxx.apply_mask(tifPath, 50);
 
 movMasked= xxx.mask_outline(tifPath);
-xxx.visualize_mask(movMasked, tt);
+xxx.visualize_mask(double(movMasked)./2^8, tt);
 
 s=dbstatus;
 save('myBreakpoints.mat', 's');
@@ -63,7 +65,11 @@ dbstop(s);
 
 yyy = path_xyt(xxx);
 yyy.refine_path(tifPath, 20, 2, 2, 'visualize', true)
-yyy.visualize_mask(movMasked, tt);
+yyy.visualize_mask(double(movMasked)./2^8, tt);
 
 
 xxx.plot_pixels()
+
+%% 
+mo = movie(tifPath);
+mo.plot()

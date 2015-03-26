@@ -17,6 +17,8 @@ classdef path_xyt<handle
         mask_dims
         mask
         pixels
+        rt_roi
+        xy_roi
     end
     
     properties
@@ -41,29 +43,33 @@ classdef path_xyt<handle
             %% check the input parameters
             p = inputParser;
             p.KeepUnmatched = true;
-            addRequired(p, 'xy_roi', @(x)( (ischar(x) && exist(x, 'file') ) || isobject(x) ) );
-            addRequired(p, 'rt_roi', @(x)( (ischar(x) && exist(x, 'file') ) || isobject(x) ) );
+            addRequired(p, 'xy_roi', @(x)(readable(x) || isobject(x) ) );
+            addRequired(p, 'rt_roi', @(x)(readable(x) || isobject(x) ) );
             addOptional(p, 'interp1', 'pchip', @(x)any( strcmpi(x, {'linear','pchip'})) );
             addOptional(p, 'lag', 0, @isscalar );
             parse(p, xy_roi, rt_roi, varargin{:});
             %
             obj.lag = p.Results.lag;
             %%
-            if feval( @(x)(ischar(x) && exist(x, 'file')) , xy_roi)
-                xy_roi = CurveROI(xy_roi);
+            if readable(xy_roi)
+                obj.xy_roi = CurveROI(xy_roi);
+            else
+                obj.xy_roi = xy_roi;
             end
             
-            if feval( @(x)(ischar(x) && exist(x, 'file')) , rt_roi)
-                rt_roi = CurveROI(rt_roi, p.Results.interp1 );
+            if readable(rt_roi)
+                obj.rt_roi = CurveROI(rt_roi, p.Results.interp1 );
+            else
+                obj.rt_roi = rt_roi;
             end
             %             if abs(numel(xy_roi.x) - max(rt_roi.x)) > 2
             %                 warning('dimension mismatch between the (x,y) and (r,t) kymograms')
             %             end
             
-            obj.T = round(max(rt_roi.x));
+            obj.T = round(max(obj.rt_roi.x));
             obj.t = (1:obj.T)';
             
-            obj.r = 1 + round( interp1( double(rt_roi.x), double(rt_roi.y), double(obj.t), p.Results.interp1, 'extrap') );
+            obj.r = 1 + round( interp1( double(obj.rt_roi.x), double(obj.rt_roi.y), double(obj.t), p.Results.interp1, 'extrap') );
             obj.L = max(obj.r);
             
             
@@ -71,10 +77,10 @@ classdef path_xyt<handle
             obj.r(obj.r<1) = 1;
             obj.r(obj.r>obj.L) = obj.L;
             
-            obj.x = xy_roi.x(obj.r);
-            obj.y = xy_roi.y(obj.r);
-            obj.x2d = xy_roi.x;
-            obj.y2d = xy_roi.y;
+            obj.x = obj.xy_roi.x(obj.r);
+            obj.y = obj.xy_roi.y(obj.r);
+            obj.x2d = obj.xy_roi.x;
+            obj.y2d = obj.xy_roi.y;
             
             obj.calc_bounds();
             
@@ -310,15 +316,28 @@ classdef path_xyt<handle
                 f = figure;
             end
             ax = subplot(1,1,1);
-            imagesc(movMasked(:,:,:,tt))
-            axis(ax, 'equal', 'tight')
             if obj.fast
-                hold all; 
-                plot(obj.x-obj.vnRectBounds(2) , obj.y-obj.vnRectBounds(1), 'g-', 'linewidth', lw)
+                obj.xy_roi.img = zeros(obj.mov_dims(1:2));
+                if ndims(movMasked) == 3
+                    obj.xy_roi.img(obj.vnRectBounds(1):obj.vnRectBounds(3),...
+                        obj.vnRectBounds(2):obj.vnRectBounds(4) ) = movMasked(:,:,tt);
+                elseif ndims(movMasked) == 4
+                    obj.xy_roi.img(obj.vnRectBounds(1):obj.vnRectBounds(3),...
+                        obj.vnRectBounds(2):obj.vnRectBounds(4), 1:3 ) = movMasked(:,:,1:3,tt);
+                end
             else
-                hold all; 
-                plot(obj.x, obj.y, 'b-', 'linewidth', lw)
+                obj.xy_roi.img = movMasked(:,:,:,tt);
             end
+            obj.xy_roi.plot();
+            %             imagesc(movMasked(:,:,:,tt))
+            %             axis(ax, 'equal', 'tight')
+            %             if obj.fast
+            %                 hold all;
+            %                 plot(obj.x-obj.vnRectBounds(2) , obj.y-obj.vnRectBounds(1), 'g-', 'linewidth', lw)
+            %             else
+            %                 hold all;
+            % %                 plot(obj.x, obj.y, 'b-', 'linewidth', lw)
+            %             end
         end
         
         function varargout = apply_mask(obj, varargin)
