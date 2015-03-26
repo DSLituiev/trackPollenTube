@@ -17,6 +17,8 @@ classdef modifiable_line < handle
         ssbg
         interp1 = 'pchip';
         img = [];
+        x0_bu % back up
+        y0_bu % back up
     end
     
     methods
@@ -30,8 +32,12 @@ classdef modifiable_line < handle
                 obj.x0 = varargin{1};
                 obj.y0 = varargin{2};
             end
+            obj.set_backup();
         end
-        
+        function set_backup(obj)
+            obj.x0_bu = obj.x0; % back up
+            obj.y0_bu = obj.y0; % back up
+        end
         
         function varargout = plot(obj, varargin)
             %% check the input parameters
@@ -65,6 +71,7 @@ classdef modifiable_line < handle
                 clr = p.Results.linespec(1);
             end
             
+            obj.set_backup();
             obj.interp;
             
             obj.llbg = plot(obj.x, obj.y, lst, 'marker', 'none', 'color', 'w', 'linewidth', p.Results.linewidth + 1, p.Unmatched );
@@ -82,14 +89,27 @@ classdef modifiable_line < handle
             set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
             varargout = {obj.f};
             % Create push button
-            btn = uicontrol('Style', 'pushbutton', 'String', 'Save',...
-                'Position', [20 20 50 20],...
+            btn_sv = uicontrol('Style', 'pushbutton', 'String', 'Save',...
+                'Units','normalized', ...
+                'Position', [0.02 0.02 0.12 0.04],...
                 'Callback', {@save, obj});
-                        
+            btn_rst = uicontrol('Style', 'pushbutton', 'String', 'Reset',...
+                'Units','normalized', ...
+                'Position', [0.20 0.02 0.12 0.04],...
+                'Callback', {@reset, obj});
         end
         
         function save(inpobj, ~, obj, varargin)
-            fprintf('saving function has not been defined in the subclass `%s`\n', class(obj) );
+            obj.set_backup();
+            %             fprintf('saving function has not been implemented in the subclass `%s`\n', class(obj) );
+        end
+        
+        function reset(inpobj, ~, obj, varargin)
+            obj.x0 = obj.x0_bu; % back up
+            obj.y0 = obj.y0_bu; % back up
+            obj.redraw();
+            set(obj.ss, 'xData', obj.x0, 'yData', obj.y0)
+            % fprintf(' reset function has not been implemented in the subclass `%s`\n', class(obj) );
         end
         
         function addPointFcn(~,~, obj, varargin)
@@ -115,7 +135,7 @@ classdef modifiable_line < handle
         function startDragFcn(~, ~, obj, varargin)
             rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
             if ~rightClick
-                set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, rightClick, varargin{:}})
+                set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, varargin{:}})
             else
                 chldrn = get(obj.ss, 'children');
                 logInd = flipud( chldrn == gco) ;
@@ -126,27 +146,24 @@ classdef modifiable_line < handle
             end
         end
         
-        function dragginFcn(~,~,obj, rightClick, varargin)
+        function dragginFcn(~,~,obj, varargin)
             pt = get(gca, 'CurrentPoint');
             chldrn = get(obj.ss, 'children');
             logInd = flipud( chldrn == gco) ;
+            x_ = get(gco, 'xData');
+            y_ = get(gco, 'yData');
             
-            if ~rightClick
-                x_ = get(gco, 'xData');
-                y_ = get(gco, 'yData');
-                
-                obj.x0(logInd) = x_;
-                obj.y0(logInd) = y_;
-                
-                set(gco, 'xData', pt(1,1))
-                set(gco, 'yData', pt(1,2))
-                
-                
-                fprintf('x:\t%f\t%f\t', obj.x0(logInd), x_ )
-                fprintf('y:\t%f\t%f\n', obj.y0(logInd), y_ )
-                
-                obj.redraw();
-            end
+            obj.x0(logInd) = x_;
+            obj.y0(logInd) = y_;
+            
+            set(gco, 'xData', pt(1,1))
+            set(gco, 'yData', pt(1,2))
+            
+            
+            fprintf('x:\t%f\t%f\t', obj.x0(logInd), x_ )
+            fprintf('y:\t%f\t%f\n', obj.y0(logInd), y_ )
+            
+            obj.redraw();
         end
         
         function interp(obj)

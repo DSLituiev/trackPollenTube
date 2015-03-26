@@ -4,8 +4,8 @@ classdef CurveROI < ImageJROI & modifiable_line
         x
         y
         % xy
-        x0
-        y0
+%         x0
+%         y0
         L
         frame
     end
@@ -16,24 +16,23 @@ classdef CurveROI < ImageJROI & modifiable_line
             if nargin <= 2 && ...
                     feval( @(x)( ischar(x) && exist(x, 'file') ) , varargin{1} )    ;
                 obj = constructCurveROI(obj, varargin{2:end});
-            elseif nargin >= 3 && ...
-                    any( strcmpi(varargin{1}, {'PolyLine', 'FreeLine', 'Freehand', 'Polygon'}) )
+%             elseif nargin >= 3 && ...
+%                     any( strcmpi(varargin{1}, {'PolyLine', 'FreeLine', 'Freehand', 'Polygon'}) )
             end
             
         end
         
-        function status = write(obj, fileName)
-            if (isempty(obj.x) || isempty(obj.y)) && ~ isempty(obj.mnCoordinates)
-                status = writeImageJRoi(fileName, obj.strType, obj.mnCoordinates(:,1), obj.mnCoordinates(:,2) );
-            else
-                status = writeImageJRoi(fileName, obj.strType, obj.x, obj.y);
+        function save(inpobj, ~, obj, varargin)
+            save@modifiable_line(inpobj, [], obj);
+            obj.calc_bounds();
+            obj.set_coordinates();
+            try
+                obj.write();
+            catch
+                warning('no file name has been set');
             end
         end
         
-        function save(inpobj, ~, obj, varargin)
-            fprintf('TO DO : saving function in the subclass `%s`\n', class(obj) );
-            % obj.write();
-        end
         %{
         function ff = plot(obj, img, varargin)
             

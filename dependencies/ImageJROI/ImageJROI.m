@@ -1,6 +1,9 @@
 classdef ImageJROI < handle
     
     properties
+        filename
+        x0
+        y0
         nNumCoords
         nVersion
         strName
@@ -39,15 +42,19 @@ classdef ImageJROI < handle
     methods
         function obj  = ImageJROI(varargin)
             if nargin == 1
-                roi = ReadImageJROI(varargin{1});
+                obj.filename = varargin{1};
+                roi = ReadImageJROI(obj.filename);
                 rf = fieldnames(roi);
+                if all(~roi.vnRectBounds)
+                    warning('empty ROI')
+                end
                 for ii = 1:numel(rf)
                     if isprop(obj, rf{ii})
                         obj.(rf{ii}) = roi.(rf{ii});
                     else
                         warning('ImageJROI:unknownPropery' ,'omitting a property: %s', rf{ii})
                     end
-                end
+                end                
             else
                 %% check the input parameters
                 p = inputParser;
@@ -59,25 +66,45 @@ classdef ImageJROI < handle
                 parse(p, varargin{:});
                 %%
                 obj.strType = p.Results.strType;
-                obj.nNumCoords = numel(p.Results.x);                
+                obj.nNumCoords = numel(p.Results.x);
                 assert( obj.nNumCoords ==  numel(p.Results.y) , 'x and y must have same length!')
                 
-                obj.x = p.Results.x;
-                obj.y = p.Results.y;
+                obj.x0 = p.Results.x;
+                obj.y0 = p.Results.y;
                 
-                obj.mnCoordinates(:,1) = obj.x;
-                obj.mnCoordinates(:,2) = obj.y;
-                
-                obj.vnRectBounds = [ min(p.Results.y), min(p.Results.x), ...
-                                     max(p.Results.y), max(p.Results.x)];
+                obj.set_coordinates();
+                obj.calc_bounds();
             end
         end
-        function write(obj, fileName)
-            if isempty(obj.x) || isempty(obj.y)
-                writeImageJRoi(fileName, obj )
-            else
-                writeImageJRoi(fileName, obj.strType, obj.x, obj.y)
+        
+        function set_coordinates(obj)
+            obj.mnCoordinates = [];
+            obj.mnCoordinates(:,1) = obj.x0;
+            obj.mnCoordinates(:,2) = obj.y0;
+        end
+        
+        function calc_bounds(obj)
+            obj.nNumCoords = numel(obj.y0);
+            obj.vnRectBounds = [ min(obj.y0), min(obj.x0), ...
+                max(obj.y0), max(obj.x0)];
+        end
+        
+        function status = write(obj, varargin)
+            %% check the input parameters
+            p = inputParser;
+            p.KeepUnmatched = true;
+            addOptional(p, 'filename', '', @writable);
+            parse(p, varargin{:});
+            %%
+            if ~isempty(p.Results.filename)
+                obj.filename = p.Results.filename;
+            elseif isempty(obj.filename)
+                error('no file name provided or set earlier')
             end
+            %%
+            obj.calc_bounds();
+            obj.set_coordinates();
+            status = writeImageJRoi(obj.filename, obj);
         end
     end
     

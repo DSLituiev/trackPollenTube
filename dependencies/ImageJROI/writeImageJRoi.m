@@ -8,29 +8,14 @@ function status = writeImageJRoi(fileName, varargin)
 % y        -- y-coordinate positions
 %
 % Copyright: Dmytro Lituiev 2014
+% BSD Licence
+
 if ~isobject(varargin{1}) && nargin > 2
     [roiType, x, y] = varargin{1:3};
     if numel(x)~=numel(y)
         error('writeImageJRoi:dimMismatch', 'dimension mismatch')
     end
-    
-    roiTypeStr = { 0, 'Polygon','';  ...
-        3,  'Line','';...
-        4,  'FreeLine', ''; ...
-        5,  'PolyLine','';...
-        6,  'NoROI', '';...
-        7,  'Freehand', 'Ellipse'; ...
-        8,  'Traced','';...
-        9,  'Angle', '';
-        10, 'Point',''};
-    
-    if ~any(strcmpi(roiType, roiTypeStr(:, 2:end)))
-        error('writeImageJRoi:unknownroiType', 'unknown roiType')
-    end
-    
-    sROI.nroiTypeID  = roiTypeStr{any(strcmpi(roiType, roiTypeStr(:, 2:end)), 2), 1};
-    sROI.nVersion = 223;
-    
+       
     % ['nTop', 'nLeft', 'nBottom', 'nRight']
     ROI.vnRectBounds = [ min(y), min(x), max(y), max(x)];
     ROI.x0 = x(:);
@@ -39,7 +24,24 @@ if ~isobject(varargin{1}) && nargin > 2
     ROI.nNumCoords = numel(x);
 else
     ROI = varargin{1};
+    roiType = ROI.strType;
 end
+%%
+roiTypeStr = { 0, 'Polygon','';  ...
+    3,  'Line','';...
+    4,  'FreeLine', ''; ...
+    5,  'PolyLine','';...
+    6,  'NoROI', '';...
+    7,  'Freehand', 'Ellipse'; ...
+    8,  'Traced','';...
+    9,  'Angle', '';
+    10, 'Point',''};
+
+if ~any(strcmpi(roiType, roiTypeStr(:, 2:end)))
+    error('writeImageJRoi:unknownroiType', 'unknown roiType')
+end
+sROI.nroiTypeID  = roiTypeStr{any(strcmpi(roiType, roiTypeStr(:, 2:end)), 2), 1};
+sROI.nVersion = 223;
 %% writing per se
 fidROI = fopen(fileName, 'w', 'ieee-be');
 
@@ -61,7 +63,7 @@ count = count + fwrite(fidROI, ROI.vnRectBounds, 'int16');
 % -- Write number of coordinates
 count = count + fwrite(fidROI, ROI.nNumCoords, 'int16');
 
-vfLinePoints = zeros(1,4);
+% vfLinePoints = zeros(1,4);
 
 % -- Write something (?)
 fseek(fidROI, 63, 'bof');
