@@ -1,4 +1,4 @@
-function [x,y, arc_length, dr0] = interp_implicit(x0, y0, varargin)
+function [x,y,r,r0, arc_length, dr0] = interp_implicit(x0, y0, varargin)
 % interpolates implicit curves parametrized by arc length
 % varargin{1} -- interpolation method 
 %                as specified in `interp1` documentation

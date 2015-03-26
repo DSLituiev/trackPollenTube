@@ -29,7 +29,7 @@ PTroi.x0 = PTroi.mnCoordinates(:,1);
 PTroi.y0  = PTroi.mnCoordinates(:,2);
 
 %%
-[PTroi.x, PTroi.y, arc_length] = interp_implicit(PTroi.x0, PTroi.y0, p.Results.interp1);
+[PTroi.x, PTroi.y, ~, ~, arc_length] = interp_implicit(PTroi.x0, PTroi.y0, p.Results.interp1);
 
 PTroi.L = round(arc_length)+1;
 
