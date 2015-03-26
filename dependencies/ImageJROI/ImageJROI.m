@@ -41,7 +41,7 @@ classdef ImageJROI < handle
     
     methods
         function obj  = ImageJROI(varargin)
-            if nargin == 1
+            if readable(varargin{1})
                 obj.filename = varargin{1};
                 roi = ReadImageJROI(obj.filename);
                 rf = fieldnames(roi);
@@ -54,7 +54,7 @@ classdef ImageJROI < handle
                     else
                         warning('ImageJROI:unknownPropery' ,'omitting a property: %s', rf{ii})
                     end
-                end                
+                end
             else
                 %% check the input parameters
                 p = inputParser;
@@ -78,6 +78,8 @@ classdef ImageJROI < handle
         end
         
         function set_coordinates(obj)
+            obj.x0 = round(obj.x0);
+            obj.y0 = round(obj.y0);
             obj.mnCoordinates = [];
             obj.mnCoordinates(:,1) = obj.x0;
             obj.mnCoordinates(:,2) = obj.y0;

@@ -8,24 +8,41 @@ classdef CurveROI < ImageJROI & modifiable_line
 %         y0
         L
         frame
+        nondecreasing = false;
     end
     
     methods
         function obj = CurveROI(varargin)
-            obj@ImageJROI(varargin{:})
-            if nargin <= 2 && ...
-                    feval( @(x)( ischar(x) && exist(x, 'file') ) , varargin{1} )    ;
-                obj = constructCurveROI(obj, varargin{2:end});
-%             elseif nargin >= 3 && ...
-%                     any( strcmpi(varargin{1}, {'PolyLine', 'FreeLine', 'Freehand', 'Polygon'}) )
-            end
+            ndinds = strcmpi(varargin, 'nondecreasing') | strcmpi(varargin, 'nd');
+            ndflag = any(ndinds);
             
+            obj@ImageJROI(varargin{~ndinds});
+            
+            interp_ind = feval(@(x)strcmpi(x, 'pchip') | strcmpi(x, 'linear') | strcmpi(x, 'spline'),  varargin);
+            obj = constructCurveROI(obj, varargin{interp_ind});            
+
+            obj.nondecreasing = ndflag;
         end
         
         function save(inpobj, ~, obj, varargin)
-            save@modifiable_line(inpobj, [], obj);
-            obj.calc_bounds();
+            save@modifiable_line(inpobj, [], obj);            
             obj.set_coordinates();
+            obj.calc_bounds();
+            if obj.nondecreasing
+                if any(diff(obj.x0)<0) || any(diff(obj.y0)<0)
+                    warning('decreasing coordinates! correction will be applied')
+                    for ii = 2:numel(obj.x0)
+                        if obj.x0(ii) < obj.x0(ii-1)
+                            obj.x0(ii) = obj.x0(ii-1);
+                        end                        
+                        if obj.y0(ii) < obj.y0(ii-1)
+                            obj.y0(ii) = obj.y0(ii-1);
+                        end
+                    end
+                    obj.redraw_all();
+                end
+            end
+                
             try
                 obj.write();
             catch

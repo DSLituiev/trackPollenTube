@@ -11,7 +11,7 @@ addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
 parse(p, varargin{:});
 %% read
 if (ischar(p.Results.roiPath) && exist(p.Results.roiPath, 'file'))
-    [path] = CurveROI(p.Results.roiPath);
+    [path] = CurveROI(p.Results.roiPath, 'nondecreasing');
 elseif isstruct(p.Results.roiPath)
     path = p.Results.roiPath;
 end
@@ -25,7 +25,7 @@ end
 path.img = kymo;
 f = path.plot();
 
-xlabel('time')
+xlabel('time [frames]')
 ylabel('coordinate')
 %% export
 if ~isempty(p.Results.outImgPath)
@@ -34,7 +34,6 @@ if ~isempty(p.Results.outImgPath)
     else
         opts = {};
     end
-    
     
     fn = fieldnames(p.Unmatched);
     for ii = 1:numel(fn)
