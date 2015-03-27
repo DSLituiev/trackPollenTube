@@ -1,6 +1,6 @@
-function [ kymogram, mov, roi ] = movie2kymo( varargin )
+function [ kymogram, mov, xy_roi ] = movie2kymo( varargin )
 %MOVIE2KYMO -- applies an `(x,y)`-roi on a `(x,y,t)` movie  and returns
-%a kymogram. If the third argument is set and is non-empty, 
+%a kymogram. If the third argument is set and is non-empty,
 %saves the obtained kymogram.
 %
 % Input
@@ -32,20 +32,18 @@ addParamValue(p, 'm4epsilon', 16, @isscalar );
 addParamValue(p, 'pad', 10, @isscalar );
 parse(p, varargin{:});
 %% read input roi
-roi = CurveROI(p.Results.roiPath);
+xy_roi = CurveROI(p.Results.roiPath);
 %% read movie
 if feval( @(x)(ischar(x) && exist(x, 'file')) , p.Results.movPath)
-    [mov] = cropRectRoiFast(p.Results.movPath, roi, p.Results.pad);
+    [mov, cropped_roi] = cropRectRoiFast(p.Results.movPath, xy_roi, p.Results.pad);
 elseif feval( ( isnumeric(x) && (sum(size(x)>1)==3) ),  p.Results.movPath)
     mov = p.Results.movPath;
+    %% trim ROI
+    cropped_roi = CurveROI('PolyLine', xy_roi.x0 - xy_roi.vnRectBounds(2)+ p.Results.pad,...
+        xy_roi.y0 - xy_roi.vnRectBounds(1) + p.Results.pad);
 end
-%% trim ROI
-roi.x0 = roi.x0 - roi.vnRectBounds(2) + p.Results.pad;
-roi.y0 = roi.y0 - roi.vnRectBounds(1) + p.Results.pad;
-roi.x = roi.x - roi.vnRectBounds(2) + p.Results.pad;
-roi.y = roi.y - roi.vnRectBounds(1) + p.Results.pad;
 %% construct kymogram
-kymogram = constructKymogram(roi, mov, p.Results.interpolation, p.Results.m4epsilon);
+kymogram = constructKymogram(cropped_roi, mov, p.Results.interpolation, p.Results.m4epsilon);
 %% save the kymogram if requested
 if ischar(p.Results.kymoPath)
     kymoPath = p.Results.kymoPath;

@@ -40,21 +40,30 @@ classdef ImageJROI < handle
     end
     
     methods
+        function copy_fields(obj, roi)
+            if isstruct(roi)
+                rf = fieldnames(roi);
+            elseif isobject(roi)
+                rf = properties(roi);
+            end
+            for ii = 1:numel(rf)
+                if isprop(obj, rf{ii})
+                    obj.(rf{ii}) = roi.(rf{ii});
+                else
+                    warning('ImageJROI:unknownPropery' ,'omitting a property: %s', rf{ii})
+                end
+            end
+        end
         function obj  = ImageJROI(varargin)
             if readable(varargin{1})
                 obj.filename = varargin{1};
-                roi = ReadImageJROI(obj.filename);
-                rf = fieldnames(roi);
+                roi = ReadImageJROI(obj.filename);                
                 if all(~roi.vnRectBounds)
                     warning('empty ROI')
                 end
-                for ii = 1:numel(rf)
-                    if isprop(obj, rf{ii})
-                        obj.(rf{ii}) = roi.(rf{ii});
-                    else
-                        warning('ImageJROI:unknownPropery' ,'omitting a property: %s', rf{ii})
-                    end
-                end
+                obj.copy_fields(roi);
+            elseif isobject(varargin{1})                
+                obj.copy_fields(varargin{1});
             else
                 %% check the input parameters
                 p = inputParser;
@@ -73,16 +82,18 @@ classdef ImageJROI < handle
                 obj.y0 = p.Results.y;
                 
                 obj.set_coordinates();
-                obj.calc_bounds();
             end
         end
         
         function set_coordinates(obj)
             obj.x0 = round(obj.x0);
             obj.y0 = round(obj.y0);
+            
+            obj.calc_bounds();
+            
             obj.mnCoordinates = [];
-            obj.mnCoordinates(:,1) = obj.x0;
-            obj.mnCoordinates(:,2) = obj.y0;
+            obj.mnCoordinates(:,1) = obj.x0 ;
+            obj.mnCoordinates(:,2) = obj.y0 ;
         end
         
         function calc_bounds(obj)
@@ -104,7 +115,6 @@ classdef ImageJROI < handle
                 error('no file name provided or set earlier')
             end
             %%
-            obj.calc_bounds();
             obj.set_coordinates();
             status = writeImageJRoi(obj.filename, obj);
         end

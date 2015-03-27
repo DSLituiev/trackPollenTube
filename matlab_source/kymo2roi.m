@@ -60,6 +60,9 @@ end
 
 if ~isempty(outRoiPath)
     status = rt_roi.write(p.Results.outRoiPath);
+    if status < 0
+        error('kymo2roi2plot:cannotWriteROI', 'could not write the ROI')
+    end
 else 
     status = -1;
 end

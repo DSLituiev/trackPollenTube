@@ -25,8 +25,8 @@ if feval( @(x)(ischar(x) && exist(x, 'file')) , PTroi)
     PTroi = ReadImageJROI(PTroi);
 end
 %%
-PTroi.x0 = PTroi.mnCoordinates(:,1);
-PTroi.y0  = PTroi.mnCoordinates(:,2);
+PTroi.x0 = (PTroi.mnCoordinates(:,1));
+PTroi.y0 = (PTroi.mnCoordinates(:,2));
 
 %%
 [PTroi.x, PTroi.y, ~, ~, arc_length] = interp_implicit(PTroi.x0, PTroi.y0, p.Results.interp1);

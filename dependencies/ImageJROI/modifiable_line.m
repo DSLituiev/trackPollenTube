@@ -59,12 +59,16 @@ classdef modifiable_line < handle
             addParamValue(p, 'linewidth', 3, @(x)(isscalar(x)));
             addParamValue(p, 'markersize', 100, @(x)(isscalar(x)));
             addParamValue(p, 'color', '', @(x)(isscalar(x) || isnumeric(x) ));
+            addParamValue(p, 'frame', 1, @(x)(isscalar(x) && isnumeric(x) ));
             parse(p, varargin{:});
             %%
             if nargin> 1
                 obj.img = img;
             end
             if ~isempty(obj.img)
+                if ndims(obj.img)>2
+                    obj.img = movie(obj.img);
+                end
                 imagesc(obj.img)
                 hold all;
             end
@@ -87,18 +91,22 @@ classdef modifiable_line < handle
             obj.markertype = p.Results.markertype;
             obj.linewidth = p.Results.linewidth;
             %%
-            
             obj.backup();
             obj.interp;
+            %            
+            obj.f = gcf;
+            set(obj.f, 'WindowButtonUpFcn', {@stopDragFcn, obj})
+            ax = findall(obj.f,'type','axes');
+            if ~isempty(ax)
+                axes(ax(1));
+                hold all
+            end
             
             obj.llbg = plot(obj.x, obj.y, lst, 'marker', 'none', 'color', 'w', 'linewidth', p.Results.linewidth + 1, p.Unmatched );
             hold all
             obj.ll   = plot(obj.x, obj.y,  lst, 'color',  obj.clr, 'linewidth', p.Results.linewidth, 'marker', 'none', p.Unmatched);
             set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
-            
-            obj.f = gcf;
-            set(obj.f, 'WindowButtonUpFcn', {@stopDragFcn, obj})
-            
+                
             obj.ssbg = scatter(obj.x0, obj.y0, p.Results.markersize * 1.2, 'w',...
                 p.Results.markertype, 'linewidth', p.Results.linewidth * 1.2);
             obj.scatter_();

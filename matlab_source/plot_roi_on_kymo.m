@@ -1,4 +1,4 @@
-function f = plot_roi_on_kymo(varargin)
+function [f, path] = plot_roi_on_kymo(varargin)
 %% check the input parameters
 p = inputParser;
 p.KeepUnmatched = true;

@@ -11,7 +11,8 @@ addRequired(p, 'y0', @isnumeric);
 addOptional(p, 'interp1', 'pchip', @(x) any(strcmpi(x, {'linear','pchip', 'spline'})) );
 parse(p, x0, y0, varargin{:});
 %% 
-
+x0 = double(x0);
+y0 = double(y0);
 [arc_length, dr0] = arclength(x0 , y0, p.Results.interp1);
 
 r0 = (1+[0;cumsum(dr0)] );

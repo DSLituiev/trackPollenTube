@@ -14,6 +14,12 @@ outKymoName = 'kymo.tif';
 tifPath = fullfile(SourceDir, fileName); 
 inRoiPath = fullfile(SourceDir, inRoiName);
 outKymoPath = fullfile(SourceDir, outKymoName);
+
+
+%% 
+mo = movie(tifPath);
+mo.imagesc()
+return
 % 
 % clear moo mov;
 % mov = readTifSelected(tifPath);
@@ -27,7 +33,10 @@ outKymoPath = fullfile(SourceDir, outKymoName);
 % remove_static_bg( tifPath, tifBgPath )
 % tifPath = tifBgPath;
 %%
-[ kymogram, mov, xy_roi ] = movie2kymo( tifPath, inRoiPath, '', 'pad', 10 );
+[ kymogram, mov, xy_roi ] = movie2kymo( tifPath, inRoiPath, '', 'pad', 0 );
+
+% xy_roi.plot([]);
+xy_roi.plot(mo);
 
 figure
 imagesc( kymogram )
@@ -37,12 +46,13 @@ tt = 364; % ceil(size(mov,3)*4/5);
 f = plot_snapshot_roi( mov, xy_roi, tt);
 xy_roi.plot(mov(:,:,tt));
 
-xy_roi.plot([]);
 %% 
 outRoiName = 'kymo.roi';
 outRoiPath = fullfile(SourceDir, outRoiName);
 
 rt_roi = kymo2roi( kymogram, outRoiPath, 1 );
+
+figure
 rt_roi.plot(kymogram);
 %%
 s=dbstatus;
@@ -69,7 +79,3 @@ yyy.visualize_mask(double(movMasked)./2^8, tt);
 
 
 xxx.plot_pixels()
-
-%% 
-mo = movie(tifPath);
-mo.plot()
