@@ -15,11 +15,22 @@ classdef CurveROI < ImageJROI & modifiable_line
         function obj = CurveROI(varargin)
             ndinds = strcmpi(varargin, 'nondecreasing') | strcmpi(varargin, 'nd');
             ndflag = any(ndinds);
+            if nargin == 1 && isempty(varargin{1})
+                args = {'PolyLine', [],[]};
+            else
+                args = varargin(~ndinds);
+                if ~(ischar(args{1}))
+                    args = {'PolyLine', args{:}};
+                end
+            end
             
-            obj@ImageJROI(varargin{~ndinds});
+            obj@ImageJROI(args{:});
+            clear args
             
             interp_ind = feval(@(x)strcmpi(x, 'pchip') | strcmpi(x, 'linear') | strcmpi(x, 'spline'),  varargin);
-            obj = constructCurveROI(obj, varargin{interp_ind});            
+            if ~isempty(obj.mnCoordinates)
+                obj = constructCurveROI(obj, varargin{interp_ind});
+            end
 
             obj.nondecreasing = ndflag;
         end

@@ -3,8 +3,7 @@ classdef scrollable_movie
     % redefines methods:
     % - imagesc
     % - size
-    % - ndims
-    
+    % - ndims    
     
     properties
         mov
@@ -21,8 +20,8 @@ classdef scrollable_movie
         function out = ndims(obj)
             out = ndims(obj.mov);
         end
-        function out = size(obj)
-            out = size(obj.mov);
+        function out = size(obj, varargin)
+            out = size(obj.mov, varargin{:});
         end
         %         function out = isnumeric(obj)
         %             out = true;

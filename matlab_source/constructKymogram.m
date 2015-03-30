@@ -33,6 +33,9 @@ if ~isfield(path, 'x') || ~isfield(path, 'y')|| ~isfield(path, 'L')
         path.L = size(path.mnCoordinates, 1);
     end
 end
+if isempty(path.L)
+    path.L = numel(path.x);
+end
 
 switch kymoMethod
     

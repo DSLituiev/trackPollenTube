@@ -25,7 +25,7 @@ p = inputParser;
 p.KeepUnmatched = true;
 
 addRequired(p, 'movPath', @(x)(readable(x) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
-addRequired(p, 'roiPath', @readable );
+addOptional(p, 'roiPath', '', @(x)(readable(x) || writable(x) || isobject(x) ) );
 addOptional(p, 'kymoPath', false, @(x)( isempty(x) || islogical(x) || x==0 || x==1 || writable(x) )  );
 addParamValue(p, 'interpolation', 'l2', @(x)(any(strcmpi(x,{'l1', 'l2', 'm4'}))) );
 addParamValue(p, 'm4epsilon', 16, @isscalar );
@@ -39,8 +39,13 @@ if feval( @(x)(ischar(x) && exist(x, 'file')) , p.Results.movPath)
 elseif feval( ( isnumeric(x) && (sum(size(x)>1)==3) ),  p.Results.movPath)
     mov = p.Results.movPath;
     %% trim ROI
-    cropped_roi = CurveROI('PolyLine', xy_roi.x0 - xy_roi.vnRectBounds(2)+ p.Results.pad,...
+    cropped_roi = CurveROI(xy_roi.x0 - xy_roi.vnRectBounds(2)+ p.Results.pad,...
         xy_roi.y0 - xy_roi.vnRectBounds(1) + p.Results.pad);
+end
+
+if isempty(cropped_roi.x0) || isempty(cropped_roi.y0) || isempty(cropped_roi.vnRectBounds)
+    fh = cropped_roi.plot(mov);
+    waitfor(fh);
 end
 %% construct kymogram
 kymogram = constructKymogram(cropped_roi, mov, p.Results.interpolation, p.Results.m4epsilon);

@@ -3,8 +3,8 @@ function FinalImage = readTifSelected(FileTif, varargin)
 p = inputParser;
 p.KeepUnmatched = true;
 addRequired(p, 'FileTif', @(x)(ischar(x) && exist(x, 'file')) );
-addOptional(p, 'rowRange', [1, Inf], @isnumeric );
-addOptional(p, 'colRange', [1, Inf], @isnumeric );
+addOptional(p, 'rowRange', [], @isnumeric );
+addOptional(p, 'colRange', [], @isnumeric );
 addOptional(p, 'frameRange', [1, Inf], @isnumeric );
 parse(p, FileTif, varargin{:});
 %%
@@ -19,15 +19,24 @@ rows_per_strip          = min(rows_per_strip, InfoImage(1).Height);
 
 %== include the path or copy the compiled tifflib :
 %  addpath('C:\Program Files\MATLAB\R2012a\toolbox\matlab\imagesci\private')
+if ~isempty(p.Results.rowRange)
+    rowStart =  max(double(p.Results.rowRange(1)), 1);
+    rowEnd   =  min(double(p.Results.rowRange(2)), InfoImage(1).Height);
+else
+    rowStart =  1.0;
+    rowEnd   =  double(InfoImage(1).Height);
+end
 
-rowStart =  max(double(p.Results.rowRange(1)), 1);
-rowEnd   =  min(double(p.Results.rowRange(2)), InfoImage(1).Height);
-colStart =  max(double(p.Results.colRange(1)), 1);
-colEnd   =  min(double(p.Results.colRange(2)), InfoImage(1).Width);
+if ~isempty(p.Results.colRange)
+    colStart =  max(double(p.Results.colRange(1)), 1);
+    colEnd   =  min(double(p.Results.colRange(2)), InfoImage(1).Width);
+else
+    colStart = 1;
+    colEnd   = InfoImage(1).Width;
+end
 
 rowStartRound = rows_per_strip * floor((rowStart-1)/rows_per_strip)+1;
 rowEndRound   = rows_per_strip * ceil(rowEnd/rows_per_strip);
-
 
 %== create a column cropping structure for 'subsref' function
 S.type = '()';

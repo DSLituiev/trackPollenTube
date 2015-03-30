@@ -13,17 +13,20 @@ parse(p, varargin{:});
 %%
 [frame, ROI] = processRoiInput(p.Results.roiPath);
 
+if ~isempty(ROI.vnRectBounds)
+    movie = readTifSelected(p.Results.movPath, ...
+        1 + [max(0, ROI.vnRectBounds(1) - p.Results.pad) , ROI.vnRectBounds(3) + p.Results.pad ],...
+        1 + [max(0, ROI.vnRectBounds(2) - p.Results.pad) , ROI.vnRectBounds(4) + p.Results.pad ], p.Results.frames);
 
-movie = readTifSelected(p.Results.movPath, ...
-    1 + [max(0, ROI.vnRectBounds(1) - p.Results.pad) , ROI.vnRectBounds(3) + p.Results.pad ],...
-    1 + [max(0, ROI.vnRectBounds(2) - p.Results.pad) , ROI.vnRectBounds(4) + p.Results.pad ], p.Results.frames);
-
+    cropped_roi = CurveROI( ROI.strType, ROI.x0 - ROI.vnRectBounds(2)+ p.Results.pad,...
+        ROI.y0 - ROI.vnRectBounds(1) + p.Results.pad);
+else
+    movie = readTifSelected(p.Results.movPath,[],[],p.Results.frames);
+    cropped_roi = CurveROI( ROI );
+end
 % movie = readTifSelected(p.Results.movPath, ...
 %     [max(0, frame(1,1) - p.Results.pad) , frame(2,1) + p.Results.pad ],...
 %     [max(0, frame(1,2) - p.Results.pad) , frame(2,2) + p.Results.pad ]);
-
-cropped_roi = CurveROI( ROI.strType, ROI.x0 - ROI.vnRectBounds(2)+ p.Results.pad,...
-    ROI.y0 - ROI.vnRectBounds(1) + p.Results.pad);
 
 if nargout>1
     varargout{1} = cropped_roi;

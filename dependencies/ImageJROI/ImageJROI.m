@@ -64,6 +64,11 @@ classdef ImageJROI < handle
                 obj.copy_fields(roi);
             elseif isobject(varargin{1})                
                 obj.copy_fields(varargin{1});
+            elseif writable(varargin{1}) && ~isempty(varargin{1})
+                obj.filename = varargin{1};
+                obj.x0 = [];
+                obj.y0 = [];                
+                obj.set_coordinates();
             else
                 %% check the input parameters
                 p = inputParser;
@@ -92,8 +97,12 @@ classdef ImageJROI < handle
             obj.calc_bounds();
             
             obj.mnCoordinates = [];
-            obj.mnCoordinates(:,1) = obj.x0 ;
-            obj.mnCoordinates(:,2) = obj.y0 ;
+            if ~isempty(obj.x0)
+                obj.mnCoordinates(:,1) = obj.x0 ;
+            end
+            if ~isempty(obj.y0)
+                obj.mnCoordinates(:,2) = obj.y0 ;
+            end
         end
         
         function calc_bounds(obj)

@@ -21,10 +21,14 @@ classdef modifiable_line < handle
         img = [];
         x0_bu % back up
         y0_bu % back up
-        markersize;
-        markertype;
-        linewidth;
-        clr;
+    end
+    properties (GetAccess = private)
+        markersize_;
+        markertype_;
+        linewidth_;
+        lst_;
+        unmatched_args_;
+        clr_;
         drawmode = false;
         btn_draw;
         help_text_h
@@ -111,13 +115,15 @@ classdef modifiable_line < handle
                 end
             end
             if ~isempty(p.Results.color)
-                obj.clr = p.Results.color;
+                obj.clr_ = p.Results.color;
             elseif feval(@(x)( any(strcmpi(x, {'y', 'm', 'c', 'r', 'g', 'b', 'w', 'k'}))),  p.Results.linespec(1))
-                obj.clr = p.Results.linespec(1);
+                obj.clr_ = p.Results.linespec(1);
             end
-            obj.markersize = p.Results.markersize;
-            obj.markertype = p.Results.markertype;
-            obj.linewidth = p.Results.linewidth;
+            obj.markersize_ = p.Results.markersize;
+            obj.markertype_ = p.Results.markertype;
+            obj.linewidth_ = p.Results.linewidth;
+            obj.lst_ = lst;
+            obj.unmatched_args_ = p.Unmatched;
             %%
             obj.backup();
             obj.interp;
@@ -130,13 +136,10 @@ classdef modifiable_line < handle
                 hold all
             end
             
-            obj.llbg = plot(obj.x, obj.y, lst, 'marker', 'none', 'color', 'w', 'linewidth', p.Results.linewidth + 1, p.Unmatched );
-            hold all
-            obj.ll   = plot(obj.x, obj.y,  lst, 'color',  obj.clr, 'linewidth', p.Results.linewidth, 'marker', 'none', p.Unmatched);
-%             set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
+            obj.plot_lines_()
                 
-            obj.ssbg = scatter(obj.x0, obj.y0, p.Results.markersize * 1.2, 'w',...
-                p.Results.markertype, 'linewidth', p.Results.linewidth * 1.2);
+            obj.ssbg = scatter(obj.x0, obj.y0, obj.markersize_ * 1.2, 'w',...
+                obj.markertype_, 'linewidth', obj.linewidth_ * 1.2);
             obj.scatter_();
             
             set(get(obj.ss, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@startDragFcn, obj})            
@@ -176,14 +179,21 @@ classdef modifiable_line < handle
         function replot(obj)
             %     set(obj.ss, 'xData', obj.x0, 'yData', obj.y0)
             set(obj.ssbg, 'xData', obj.x0, 'yData', obj.y0)
-            if numel(obj.x0) > 2
-                obj.interp();
+                if numel(obj.x0) > 2
+                    obj.interp();
+                else
+                    obj.x = obj.x0;
+                    obj.y = obj.y0;
+                end
+                
+            if ~isempty(obj.ll)
+                set(obj.ll,   'xData', obj.x, 'yData', obj.y)
+                set(obj.llbg, 'xData', obj.x, 'yData', obj.y)
             else
-                obj.x = obj.x0;
-                obj.y = obj.y0;
+                obj.plot_lines_()
+                uistack(obj.ssbg, 'top')
+                uistack(obj.ss, 'top')
             end
-            set(obj.ll,   'xData', obj.x, 'yData', obj.y)
-            set(obj.llbg, 'xData', obj.x, 'yData', obj.y)
         end
         %%
         function replot_all(obj)
@@ -195,10 +205,16 @@ classdef modifiable_line < handle
         end
         
         function scatter_(obj)
-            obj.ss = scatter(obj.x0, obj.y0,  obj.markersize*0.75,  obj.clr, ...
-                obj.markertype, 'linewidth', obj.linewidth*0.75 );
+            obj.ss = scatter(obj.x0, obj.y0,  obj.markersize_*0.75,  obj.clr_, ...
+                obj.markertype_, 'linewidth', obj.linewidth_*0.75 );
         end
-        
+        function plot_lines_(obj)
+            obj.llbg = plot(obj.x, obj.y, obj.lst_, 'marker', 'none', 'color', 'w', 'linewidth', obj.linewidth_ + 1,  obj.unmatched_args_);
+            hold all
+            obj.ll   = plot(obj.x, obj.y,  obj.lst_, 'color',  obj.clr_, 'linewidth', obj.linewidth_, 'marker', 'none',  obj.unmatched_args_);
+            % set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
+        end
+
         function check_bounds(obj)
             obj.x0(obj.x0<1) = 1;
             obj.y0(obj.y0<1) = 1;
@@ -273,7 +289,7 @@ classdef modifiable_line < handle
         %%
         function axes_click(~,~,obj)
             rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
-            if obj.drawmode % && rightClick                
+            if obj.drawmode && ~rightClick                
                 pt = get(gca, 'CurrentPoint');
                 x_ = pt(1,1);
                 y_ = pt(1,2);
@@ -307,7 +323,7 @@ classdef modifiable_line < handle
             rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
             if ~rightClick
                 set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, curr_obj, varargin{:}})
-            elseif ~ obj.drawmode
+            else
                 chldrn = get(obj.ss, 'children');
                 logInd = flipud( chldrn == gco) ;
                 obj.x0 = obj.x0(~logInd);

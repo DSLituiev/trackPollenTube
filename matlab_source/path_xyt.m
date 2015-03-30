@@ -28,16 +28,23 @@ classdef path_xyt<handle
     end
     
     methods
-        function obj = path_xyt( xy_roi, rt_roi, varargin )
-            if nargin == 1 && isa(xy_roi,'path_xyt')
-                props = properties(xy_roi);
-                for i = 1:length(props)
-                    % Use Dynamic Expressions to copy the required property.
-                    % For more info on usage of Dynamic Expressions, refer to
-                    % the section "Creating Field Names Dynamically" in:
-                    % web([docroot '/techdoc/matlab_prog/br04bw6-38.html#br1v5a9-1'])
-                    obj.(props{i}) = xy_roi.(props{i});
+        function copy_fields(obj, roi)
+            if isstruct(roi)
+                rf = fieldnames(roi);
+            elseif isobject(roi)
+                rf = properties(roi);
+            end
+            for ii = 1:numel(rf)
+                if isprop(obj, rf{ii})
+                    obj.(rf{ii}) = roi.(rf{ii});
+                else
+                    warning('ImageJROI:unknownPropery' ,'omitting a property: %s', rf{ii})
                 end
+            end
+        end
+        function obj = path_xyt( xy_roi, rt_roi, varargin )
+            if nargin == 1 && isa(xy_roi, 'path_xyt')
+                 obj.copy_fields(xy_roi)
                 return
             end
             %% check the input parameters

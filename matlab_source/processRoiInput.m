@@ -11,7 +11,11 @@ elseif ( isobject(roiPath) && isprop(roiPath, 'vnRectBounds') && isprop(roiPath,
         || ( isstruct(roiPath)  && all(isfield(roiPath, {'vnRectBounds','strType'})) )
     %== take the ROI supplied in the native format
     ROI = roiPath;
+    if ~isempty(ROI.vnRectBounds)
     frame = reshape(ROI.vnRectBounds, [2,2])' + 1;
+    else
+        frame = [];
+    end
     % [roiPath.vnRectBounds(1), roiPath.vnRectBounds(2);roiPath.vnRectBounds(3), roiPath.vnRectBounds(4)]+1;
 elseif   isnumeric(roiPath)
     %== take the ROI supplied in the 'frame' format
