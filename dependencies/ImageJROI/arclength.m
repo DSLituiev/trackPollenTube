@@ -174,6 +174,11 @@ chordlen = seglen;
 spl = cell(1,nd);
 spld = spl;
 diffarray = [3 0 0;0 2 0;0 0 1;0 0 0];
+  
+if any([0;chordlen==0])
+    error('replicate control points!')
+end
+  
 for i = 1:nd
   switch method
     case 'pchip'

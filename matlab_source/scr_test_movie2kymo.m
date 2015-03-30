@@ -17,7 +17,7 @@ outKymoPath = fullfile(SourceDir, outKymoName);
 
 
 %% 
-mo = movie(tifPath);
+mo = scrollable_movie(tifPath);
 mo.imagesc()
 return
 % 

@@ -25,6 +25,9 @@ classdef modifiable_line < handle
         markertype;
         linewidth;
         clr;
+        drawmode = false;
+        btn_draw;
+        help_text_h
     end
     
     methods
@@ -50,6 +53,31 @@ classdef modifiable_line < handle
             obj.y0 = obj.y0_bu; % back up
         end
         
+        function close_figure(~,~, obj)
+            % Close request function
+            % to display a question dialog box
+            if numel(obj.x0) == numel(obj.x0_bu) && ...
+                    numel(obj.y0) == numel(obj.y0_bu) && ...
+                    ~any(obj.x0 - obj.x0_bu) && ~any(obj.y0 - obj.y0_bu)
+                delete(gcf);
+                return
+            end
+            
+            selection = questdlg('Save current ROI?',...
+                'Close Request Function',...
+                'Yes','No','Yes');
+            switch selection,
+                case 'Yes',
+                    obj.backup();
+                    delete(gcf)
+                    return
+                case 'No',
+                    obj.unbackup();
+                    delete(gcf)
+                    return
+            end
+        end
+        
         function varargout = plot(obj, img, varargin)
             %% check the input parameters
             p = inputParser;
@@ -67,7 +95,7 @@ classdef modifiable_line < handle
             end
             if ~isempty(obj.img)
                 if ndims(obj.img)>2
-                    obj.img = movie(obj.img);
+                    obj.img = scrollable_movie(obj.img);
                 end
                 imagesc(obj.img)
                 hold all;
@@ -95,7 +123,7 @@ classdef modifiable_line < handle
             obj.interp;
             %            
             obj.f = gcf;
-            set(obj.f, 'WindowButtonUpFcn', {@stopDragFcn, obj})
+            set(obj.f, 'WindowButtonUpFcn', {@stopDragFcn, obj}, 'CloseRequestFcn', {@close_figure, obj})
             ax = findall(obj.f,'type','axes');
             if ~isempty(ax)
                 axes(ax(1));
@@ -105,36 +133,61 @@ classdef modifiable_line < handle
             obj.llbg = plot(obj.x, obj.y, lst, 'marker', 'none', 'color', 'w', 'linewidth', p.Results.linewidth + 1, p.Unmatched );
             hold all
             obj.ll   = plot(obj.x, obj.y,  lst, 'color',  obj.clr, 'linewidth', p.Results.linewidth, 'marker', 'none', p.Unmatched);
-            set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
+%             set(obj.ll, 'HitTest','on', 'ButtonDownFcn', {@addPointFcn, obj})
                 
             obj.ssbg = scatter(obj.x0, obj.y0, p.Results.markersize * 1.2, 'w',...
                 p.Results.markertype, 'linewidth', p.Results.linewidth * 1.2);
             obj.scatter_();
             
-            set(get(obj.ss, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@startDragFcn, obj})
+            set(get(obj.ss, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@startDragFcn, obj})            
+            
+            set(get(gca, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@axes_click, obj})
             
             varargout = {obj.f};
             % Create push button
-            btn_sv = uicontrol('Style', 'pushbutton', 'String', 'Save',...
+            obj.btn_draw = uicontrol('Style', 'togglebutton', 'String', 'Draw',...
+                'TooltipString', ['Add points to the end of the line', char(10), 'if up, curve can be modified by pasting intermediate points'],...
                 'Units','normalized', ...
                 'Position', [0.02 0.02 0.12 0.04],...
-                'Callback', {@save, obj});
-            btn_rst = uicontrol('Style', 'pushbutton', 'String', 'Reset',...
+                'Callback', {@draw_curve, obj});            
+            btn_clr = uicontrol('Style', 'pushbutton', 'String', 'Clear',...
+                'TooltipString', ['Clear the curve completely', char(10) , ...
+                'In case, you can restore it with "Reset" button'],...
                 'Units','normalized', ...
                 'Position', [0.20 0.02 0.12 0.04],...
+                'Callback', {@clear_curve, obj});
+            btn_rst = uicontrol('Style', 'pushbutton', 'String', 'Reset',...
+                'TooltipString', ['Restore the saved curve'],...
+                'Units','normalized', ...
+                'Position', [0.38 0.02 0.12 0.04],...
                 'Callback', {@reset, obj});
+            btn_sv = uicontrol('Style', 'pushbutton', 'String', 'Save',...
+                'TooltipString', ['Save current curve', char(10), ...
+                '[internally and to the file if specified]'],...
+                'Units','normalized', ...
+                'Position', [0.56 0.02 0.12 0.04],...
+                'Callback', {@save, obj});
+            btn_clr = uicontrol('Style', 'togglebutton', 'String', 'Help',...
+                'Units','normalized', ...
+                'Position', [0.74 0.02 0.12 0.04],...
+                'Callback', {@show_help, obj});
         end
         %%
-        function redraw(obj)
+        function replot(obj)
             %     set(obj.ss, 'xData', obj.x0, 'yData', obj.y0)
             set(obj.ssbg, 'xData', obj.x0, 'yData', obj.y0)
-            obj.interp;
+            if numel(obj.x0) > 2
+                obj.interp();
+            else
+                obj.x = obj.x0;
+                obj.y = obj.y0;
+            end
             set(obj.ll,   'xData', obj.x, 'yData', obj.y)
             set(obj.llbg, 'xData', obj.x, 'yData', obj.y)
         end
         %%
-        function redraw_all(obj)
-            obj.redraw();
+        function replot_all(obj)
+            obj.replot();
             drawnow
             delete(obj.ss);
             obj.scatter_();
@@ -157,6 +210,35 @@ classdef modifiable_line < handle
             end
         end
         %% button callback functions
+        function show_help(but_obj, ~, obj)
+            if get(but_obj, 'Value')
+                axlims = axis;
+                obj.help_text_h = text(axlims(1) + 0.05*axlims(2), axlims(3) + 0.05*axlims(4), ...
+                [    'Draw:', char(10), ...
+                'allows to add {\bf new control points to the end of the ROI} curve ', char(10), ...
+                'on mouse clicks.', char(10),...
+                'If not pressed, {\bf internal control points} can be added ', char(10),...
+                'by right clicks on the ROI curve. The {\bf existing control points} ', char(10), ...
+                'can be moved when clicked with the left mouse button', char(10),char(10),...
+                'Clear:', char(10), ...
+                'clears all control points of the ROI curve.', char(10),char(10),...                
+                'Save:', char(10), ...
+                'saves the ROI control points', char(10), ...
+                '(1) to the internal buffer and', char(10), '(2) to a command-line specified file', char(10),char(10), ...
+                'Reset:', char(10), ...
+                'resets the ROI to the state saved in the internal buffer', char(10),char(10), ...
+                'Help:', char(10), 'press the "Help" button again to hide this message', char(10),char(10),... 
+                'Movie scrolling: ',char(10), ...
+                'use the side scroll bar or your mouse wheel. Click on the ',char(10), ...
+                'scroll bar with the mouse to increase the wheel step',...
+                ],...
+                'BackgroundColor', 'w', 'VerticalAlignment', 'top', 'FontSize', 12,...
+                'interpreter', 'tex', 'fontname', 'times' );
+            else
+                delete(obj.help_text_h)
+            end
+        end
+        %%
         function save(~, ~, obj, varargin)
             obj.check_bounds();
             obj.backup();
@@ -165,13 +247,41 @@ classdef modifiable_line < handle
         
         function reset(~, ~, obj, varargin)
             obj.unbackup();
-            obj.redraw_all();
+            obj.replot_all();
             % fprintf(' reset function has not been implemented in the subclass `%s`\n', class(obj) );
         end
         %%
-        function addPointFcn(~,~, obj, varargin)
+        function clear_curve(~,~, obj)            
+                obj.x0 = [];
+                obj.y0 = [];
+                obj.x = [];
+                obj.y = [];
+                %% hide
+                set([obj.ss, obj.ssbg, obj.ll, obj.llbg], 'XData', obj.x0, 'YData', obj.y0);
+                set(obj.btn_draw, 'Value', 1)
+                draw_curve(obj.btn_draw, [], obj)
+        end
+        %%
+        function draw_curve(but_obj, ~, obj, varargin)
+            obj.drawmode = get(but_obj, 'Value');  
+            if obj.drawmode
+                set(but_obj,'String', 'Drawing...')
+            else
+                set(but_obj,'String', 'Draw')
+            end
+        end
+        %%
+        function axes_click(~,~,obj)
             rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
-            if rightClick
+            if obj.drawmode % && rightClick                
+                pt = get(gca, 'CurrentPoint');
+                x_ = pt(1,1);
+                y_ = pt(1,2);
+                obj.x0 = [obj.x0; x_];
+                obj.y0 = [obj.y0; y_];
+                %% replot
+                obj.replot_all();
+            elseif strcmpi(get(gco, 'type'), 'line') && rightClick
                 pt = get(gca, 'CurrentPoint');
                 x_ = pt(1,1);
                 y_ = pt(1,2);
@@ -183,8 +293,7 @@ classdef modifiable_line < handle
                 obj.y0 = [obj.y0(before_new_point); y_; obj.y0(~before_new_point)];
                 obj.interp();
                 %% replot
-                set([obj.ss, obj.ssbg],'XData', obj.x0);
-                set([obj.ss, obj.ssbg],'YData', obj.y0);
+                set([obj.ss, obj.ssbg],'XData', obj.x0,'YData', obj.y0);
                 set(get(obj.ss, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@startDragFcn, obj})
                 drawnow
             end
@@ -198,13 +307,13 @@ classdef modifiable_line < handle
             rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
             if ~rightClick
                 set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, curr_obj, varargin{:}})
-            else
+            elseif ~ obj.drawmode
                 chldrn = get(obj.ss, 'children');
                 logInd = flipud( chldrn == gco) ;
                 obj.x0 = obj.x0(~logInd);
                 obj.y0 = obj.y0(~logInd);
                 delete(gco);
-                obj.redraw();
+                obj.replot();
             end
         end
         %%
@@ -224,7 +333,7 @@ classdef modifiable_line < handle
             fprintf('x:\t%u\t', obj.x0(logInd) ) % , x_ )
             fprintf('y:\t%u\n', obj.y0(logInd) ) % , y_ )
             
-            obj.redraw();
+            obj.replot();
         end
         %%
         function interp(obj)
