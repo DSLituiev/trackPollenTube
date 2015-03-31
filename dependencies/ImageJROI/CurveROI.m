@@ -9,6 +9,8 @@ classdef CurveROI < ImageJROI & modifiable_line
         L
         frame
         nondecreasing = false;
+        original_vnRectBounds;
+        cropped = false;
     end
     
     methods
@@ -19,13 +21,19 @@ classdef CurveROI < ImageJROI & modifiable_line
                 args = {'PolyLine', [],[]};
             else
                 args = varargin(~ndinds);
-                if ~(ischar(args{1}))
+                if ~(readable(args{1}))
                     args = {'PolyLine', args{:}};
                 end
             end
             
             obj@ImageJROI(args{:});
             clear args
+            
+            if obj.cropped && ~isempty(obj.original_vnRectBounds)
+                obj.mnCoordinates(:,1) = obj.mnCoordinates(:,1) + obj.original_vnRectBounds(2);
+                obj.mnCoordinates(:,2) = obj.mnCoordinates(:,2) + obj.original_vnRectBounds(1);
+                obj.cropped = false;
+            end
             
             interp_ind = feval(@(x)strcmpi(x, 'pchip') | strcmpi(x, 'linear') | strcmpi(x, 'spline'),  varargin);
             if ~isempty(obj.mnCoordinates)
@@ -39,6 +47,7 @@ classdef CurveROI < ImageJROI & modifiable_line
             save@modifiable_line(inpobj, [], obj);            
             obj.set_coordinates();
             obj.calc_bounds();
+            
             if obj.nondecreasing
                 if any(diff(obj.x0)<0) || any(diff(obj.y0)<0)
                     warning('decreasing coordinates! correction will be applied')
@@ -53,14 +62,25 @@ classdef CurveROI < ImageJROI & modifiable_line
                     obj.redraw_all();
                 end
             end
-                
-            try
-                obj.write();
-            catch
-                warning('no file name has been set');
+                       
+            if ~obj.cropped && isempty(obj.original_vnRectBounds)
+            	obj.write();
+            else
+                obj_uncropped = CurveROI(obj);
+                obj_uncropped.write();
+%                 notify(obj,' Saving'); 
             end
+            
         end
         
+        
+        function put_in_frame(obj, vnRectBounds_)
+            obj.vnRectBounds = vnRectBounds_;
+            obj.x0 = obj.x0 + vnRectBounds_(2);
+            obj.y0 = obj.y0 + vnRectBounds_(1);
+            obj.interp();
+            obj.backup();
+        end
         %{
         function ff = plot(obj, img, varargin)
             
@@ -142,3 +162,4 @@ classdef CurveROI < ImageJROI & modifiable_line
     end
     
 end
+

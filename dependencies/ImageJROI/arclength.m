@@ -174,9 +174,12 @@ chordlen = seglen;
 spl = cell(1,nd);
 spld = spl;
 diffarray = [3 0 0;0 2 0;0 0 1;0 0 0];
-  
-if any([0;chordlen==0])
-    error('replicate control points!')
+
+replicates = [0;chordlen==0];
+if any(replicates)
+    data = data(~replicates,:);
+    chordlen = chordlen(chordlen~=0);
+    warning('replicate control points resolved')
 end
   
 for i = 1:nd

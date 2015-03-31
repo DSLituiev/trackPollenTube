@@ -272,7 +272,7 @@ classdef path_xyt<handle
             p = inputParser;
             p.KeepUnmatched = true;
             addRequired(p, 'obj', @isobject);
-            addRequired(p, 'movPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && ( numel(size(x))==3 ) ) ) );
+            addRequired(p, 'movPath', @(x)( readable(x) || ( isnumeric(x) && ( numel(size(x))==3 ) ) ) );
             addOptional(p, 'outPath', '', @writeable );
             parse(p, obj, varargin{:});
             %%

@@ -1,4 +1,4 @@
-function [ kymogram, mov, xy_roi ] = movie2kymo( varargin )
+function [ kymogram, mov, varargout ] = movie2kymo( varargin )
 %MOVIE2KYMO -- applies an `(x,y)`-roi on a `(x,y,t)` movie  and returns
 %a kymogram. If the third argument is set and is non-empty,
 %saves the obtained kymogram.
@@ -26,35 +26,58 @@ p.KeepUnmatched = true;
 
 addRequired(p, 'movPath', @(x)(readable(x) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
 addOptional(p, 'roiPath', '', @(x)(readable(x) || writable(x) || isobject(x) ) );
-addOptional(p, 'kymoPath', false, @(x)( isempty(x) || islogical(x) || x==0 || x==1 || writable(x) )  );
+addOptional(p, 'kymoPath', false, @(x)( isempty(x) || islogical(x) || isscalar(x) && (x==0 || x==1) || writable(x) )  );
 addParamValue(p, 'interpolation', 'l2', @(x)(any(strcmpi(x,{'l1', 'l2', 'm4'}))) );
 addParamValue(p, 'm4epsilon', 16, @isscalar );
 addParamValue(p, 'pad', 10, @isscalar );
 parse(p, varargin{:});
 %% read input roi
-xy_roi = CurveROI(p.Results.roiPath);
+if isempty(p.Results.roiPath)
+    roiPath = replace_extension(p.Results.movPath, 'roi');
+else
+    roiPath = p.Results.roiPath;   
+end
+xy_roi = CurveROI(roiPath);
+
 %% read movie
-if feval( @(x)(ischar(x) && exist(x, 'file')) , p.Results.movPath)
-    [mov, cropped_roi] = cropRectRoiFast(p.Results.movPath, xy_roi, p.Results.pad);
-elseif feval( ( isnumeric(x) && (sum(size(x)>1)==3) ),  p.Results.movPath)
+if feval( @readable, p.Results.movPath)
+    [mov, cropped_roi, vnRectBounds] = cropRectRoiFast(p.Results.movPath, xy_roi, p.Results.pad);
+elseif feval( @(x)( isnumeric(x) && (sum(size(x)>1)==3) ),  p.Results.movPath)
     mov = p.Results.movPath;
-    %% trim ROI
-    cropped_roi = CurveROI(xy_roi.x0 - xy_roi.vnRectBounds(2)+ p.Results.pad,...
-        xy_roi.y0 - xy_roi.vnRectBounds(1) + p.Results.pad);
+    % trim ROI
+    cropped_roi = CurveROI(ROI);
+    cropped_roi.x0 = ROI.x0 - ROI.vnRectBounds(2) + p.Results.pad;
+    cropped_roi.x0 = ROI.y0 - ROI.vnRectBounds(1) + p.Results.pad;
+    cropped_roi.calc_bounds();
+end
+%%
+    function out = save_xy(varargin)
+        fprintf('saving xy ROI\n')
+        out = varargin;
+    end
+%%
+if isempty(xy_roi.x0) || isempty(xy_roi.y0) || isempty(xy_roi.vnRectBounds)
+    fh = xy_roi.plot(mov);
+    ls_xy_saving = addlistener( xy_roi,'Saving', @save_xy );
+    title('No ROI has been provided. Please draw one!')
+    waitfor(fh);
+    if isempty(xy_roi.x0)
+        error('no ROI has been drawn. Exiting')
+    end
+    [mov, cropped_roi, vnRectBounds] = cropRectRoiFast(mov, xy_roi, p.Results.pad);
+else
+    cropped_roi.filename = replace_extension(xy_roi.filename, '-crop.roi');
 end
 
-if isempty(cropped_roi.x0) || isempty(cropped_roi.y0) || isempty(cropped_roi.vnRectBounds)
-    fh = cropped_roi.plot(mov);
-    waitfor(fh);
-end
+varargout = {cropped_roi, vnRectBounds};
 %% construct kymogram
 kymogram = constructKymogram(cropped_roi, mov, p.Results.interpolation, p.Results.m4epsilon);
 %% save the kymogram if requested
 if ischar(p.Results.kymoPath)
     kymoPath = p.Results.kymoPath;
 elseif p.Results.kymoPath
-    pathstr = fileparts(p.Results.tifPath);
-    kymoPath = fullfile(pathstr, 'kymo.tif');
+    pathstr_ = fileparts(p.Results.tifPath);
+    kymoPath = fullfile(pathstr_, 'kymo.tif');
 else
     kymoPath = '';
 end

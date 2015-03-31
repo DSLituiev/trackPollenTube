@@ -3,7 +3,7 @@ function ff = visualize_kymo3D(tifPath, kymogram, xy_roi, rt_roi, varargin)
 p = inputParser;
 p.KeepUnmatched = true;
 
-addRequired(p, 'tifPath', @(x)( (ischar(x) && exist(x, 'file')) ) );
+addRequired(p, 'tifPath',  @(x)( readable(x) || ( isnumeric(x) && ( numel(size(x))==3 ) ) ) );
 addRequired(p, 'kymogram',  @(x)( isnumeric(x) && (sum(size(x)>1)==2) ) );
 addRequired(p, 'xy_roi',  @isobject );
 addRequired(p, 'rt_roi',  @isobject );

@@ -1,4 +1,4 @@
-classdef scrollable_movie
+classdef scrollable_movie < handle
     %SCROLLABLE_MOVIE a class for movie display with a scroll bar
     % redefines methods:
     % - imagesc
@@ -8,12 +8,17 @@ classdef scrollable_movie
     properties
         mov
         mov_size
+        tt
         T
         im
         figure
         axes
         slider;
         color = false;
+    end
+    
+    events
+       Scroll
     end
     
     methods
@@ -63,27 +68,20 @@ classdef scrollable_movie
             end
         end
         
-        function replot_(obj, tt, varargin)
+        function replot_(obj, varargin)
             if obj.color
-                set(obj.im, 'CData', obj.mov(:,:, :,tt)) ;
+                set(obj.im, 'CData', obj.mov(:,:, :,obj.tt)) ;
             else
-                set(obj.im, 'CData', obj.mov(:,:,tt)) ;
+                set(obj.im, 'CData', obj.mov(:,:,obj.tt)) ;
             end
-            title(obj.axes, sprintf('frame %u', tt))
+            title(obj.axes, sprintf('frame %u', obj.tt))
+            notify(obj, 'Scroll')
             % set(obj.figure, 'name', sprintf('frame %u', tt))
         end
         
-        function setframe_(obj, tt)
-            if obj.color
-                set(obj.im, 'CData', obj.mov(:,:,:, tt)) ;
-            else
-                set(obj.im, 'CData', obj.mov(:,:,tt)) ;
-            end
-        end
-        
         function setframe_slide(cobj, ~, obj, varargin)
-            tt = round(get(cobj, 'Value'));
-            obj.setframe_(tt);
+            obj.tt = round(get(cobj, 'Value'));
+            obj.replot_();
         end
         
         function setframe_wheel(cobj, eventdata, obj, varargin)            
@@ -96,26 +94,26 @@ classdef scrollable_movie
                 step = 1;
             end
 %             if (strcmp(type, 'image') || uicontr_flag)
-                tt = round(get(obj.slider, 'Value'));
+                obj.tt = round(get(obj.slider, 'Value'));
                 if eventdata.VerticalScrollCount > 0
-                    tt = max(1, tt - step);
+                    obj.tt = max(1, obj.tt - step);
                 else
-                    tt = min(obj.T, tt + step);
+                    obj.tt = min(obj.T, obj.tt + step);
                 end
-                set(obj.slider, 'Value', tt)
-                obj.setframe_(tt);
+                set(obj.slider, 'Value', obj.tt)
+                obj.replot_();
 %             end
         end
         
         function imagesc(obj)
-            tt = 1;
-            obj.im = imagesc(obj.mov(:,:,tt));
+            obj.tt = 1;
+            obj.im = imagesc(obj.mov(:,:,obj.tt));
             axis equal
             hold on
             obj.figure = gcf();
             obj.axes = gca();
             obj.slider = uicontrol('Style', 'slider',...
-                'Min',1,'Max',obj.T,'Value',tt,...
+                'Min',1,'Max',obj.T,'Value', obj.tt,...
                 'SliderStep', [1/obj.T, 10/obj.T], ...
                 'Units','normalized', ...
                 'Position', [0.95 0.11 0.03 0.75],...

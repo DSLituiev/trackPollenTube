@@ -15,7 +15,18 @@ tifPath = fullfile(SourceDir, fileName);
 inRoiPath = fullfile(SourceDir, inRoiName);
 outKymoPath = fullfile(SourceDir, outKymoName);
 
+% delete(inRoiPath)
 
+% [ kymogram, mov, xy_roi ] = movie2kymo( tifPath );
+% xy_roi.plot(mov);
+
+pt = pttrack( tifPath );
+% figure
+% imagesc(pt.kymogram)
+% figure
+pt.plot()
+
+return
 %% 
 mo = scrollable_movie(tifPath);
 mo.imagesc()
@@ -33,10 +44,6 @@ return
 % remove_static_bg( tifPath, tifBgPath )
 % tifPath = tifBgPath;
 %%
-[ kymogram, mov, xy_roi ] = movie2kymo( tifPath, inRoiPath, '', 'pad', 0 );
-
-% xy_roi.plot([]);
-xy_roi.plot(mo);
 
 figure
 imagesc( kymogram )

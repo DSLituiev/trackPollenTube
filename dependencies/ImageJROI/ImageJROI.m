@@ -37,6 +37,18 @@ classdef ImageJROI < handle
         nFontStyle       % The style of the font (unknown format)
         strFontName      % The name of the font to render the text with
         strText          % A string containing the text
+        ROI_TYPES = { 0, 'Polygon','';  ...
+            3,  'Line','';...
+            4,  'FreeLine', ''; ...
+            5,  'PolyLine','';...
+            6,  'NoROI', '';...
+            7,  'Freehand', 'Ellipse'; ...
+            8,  'Traced','';...
+            9,  'Angle', '';
+            10, 'Point',''};
+    end
+    events
+       Saving
     end
     
     methods
@@ -54,7 +66,22 @@ classdef ImageJROI < handle
                 end
             end
         end
+        %%
+        function [strType, varargout] = get_type_arg(obj, args)
+            typeFlagInd = false(numel(args), 1);
+            for ii = 1:numel(obj.ROI_TYPES(:,2))
+                typeFlagInd = typeFlagInd | strcmpi(args, obj.ROI_TYPES(ii,2) )';
+            end
+            if sum(typeFlagInd)>0
+                strType = args{typeFlagInd};
+            else
+                strType = '';
+            end
+            varargout = {args(~typeFlagInd)};
+        end
+        %%
         function obj  = ImageJROI(varargin)
+            [obj.strType, varargin] = obj.get_type_arg(varargin);
             if readable(varargin{1})
                 obj.filename = varargin{1};
                 roi = ReadImageJROI(obj.filename);                
@@ -64,7 +91,7 @@ classdef ImageJROI < handle
                 obj.copy_fields(roi);
             elseif isobject(varargin{1})                
                 obj.copy_fields(varargin{1});
-            elseif writable(varargin{1}) && ~isempty(varargin{1})
+            elseif writable(varargin{1}) && ~isempty(varargin{1}) 
                 obj.filename = varargin{1};
                 obj.x0 = [];
                 obj.y0 = [];                
@@ -73,13 +100,14 @@ classdef ImageJROI < handle
                 %% check the input parameters
                 p = inputParser;
                 p.KeepUnmatched = true;
-                addRequired(p, 'strType', @ischar );
+%                 addRequired(p, 'strType', @ischar );
                 addRequired(p, 'x', @isnumeric );
                 addRequired(p, 'y', @isnumeric );
                 %
                 parse(p, varargin{:});
                 %%
-                obj.strType = p.Results.strType;
+                assert(~isempty(obj.strType), 'ROI type is not set');
+%                 obj.strType = p.Results.strType;
                 obj.nNumCoords = numel(p.Results.x);
                 assert( obj.nNumCoords ==  numel(p.Results.y) , 'x and y must have same length!')
                 
@@ -126,6 +154,7 @@ classdef ImageJROI < handle
             %%
             obj.set_coordinates();
             status = writeImageJRoi(obj.filename, obj);
+            notify(obj, 'Saving'); 
         end
     end
     

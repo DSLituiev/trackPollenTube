@@ -1,4 +1,13 @@
 function FinalImage = readTifSelected(FileTif, varargin)
+% read a portion of a (multi-page) tiff file
+%
+%Inputs
+%======
+% - FileTif    -- file path
+% - rowRange   -- x range
+% - colRange   -- y range
+% - frameRange -- frame (time, z-dimension, colour, etc.) range
+
 %% check the input parameters
 p = inputParser;
 p.KeepUnmatched = true;
