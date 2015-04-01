@@ -7,8 +7,9 @@ classdef path_xyt<handle
         x2d
         y2d
         r
+        r_raw
         t
-        radius = 0;
+        radius = 10;
         lag
         L
         T
@@ -76,11 +77,15 @@ classdef path_xyt<handle
             obj.T = round(max(obj.rt_roi.x));
             obj.t = (1:obj.T)';
             
-            obj.r = 1 + round( interp1( double(obj.rt_roi.x), double(obj.rt_roi.y), double(obj.t), p.Results.interp1, 'extrap') );
-            obj.L = max(obj.r);
-            
-            
-            obj.r = obj.r + obj.lag;
+            obj.r_raw = 1 + round( interp1( double(obj.rt_roi.x), double(obj.rt_roi.y), double(obj.t), p.Results.interp1, 'extrap') );
+            obj.L = max(obj.r_raw);            
+            obj.calc_coordinates();
+        end
+        function calc_coordinates(obj, varargin)
+            if nargin>1
+                obj.lag = varargin{1};
+            end
+            obj.r = obj.r_raw - obj.lag;
             obj.r(obj.r<1) = 1;
             obj.r(obj.r>obj.L) = obj.L;
             
@@ -89,8 +94,7 @@ classdef path_xyt<handle
             obj.x2d = obj.xy_roi.x;
             obj.y2d = obj.xy_roi.y;
             
-            obj.calc_bounds();
-            
+            obj.calc_bounds();  
         end
         function [theta_normal, x0, y0] = normal(obj, tt, offset)
             tt = max(2,tt);
