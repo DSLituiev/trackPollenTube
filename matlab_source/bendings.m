@@ -86,7 +86,7 @@ bnd = bnd(bnd>=1);
 
 %% optimization
 
-    function fun= interp_error(ind, z, t, varargin)
+    function fun= interp_error(ind, z, t, T, varargin)
         %% check the input parameters
         pie = inputParser;
         pie.KeepUnmatched = true;
@@ -101,7 +101,7 @@ bnd = bnd(bnd>=1);
             fun = Inf;
             return
         end
-        ii = sort(round(ind));
+        ii = [1; sort(round(ind)); T];
         if any(diff(ii) == 0)
             fun = Inf;
             return
@@ -111,14 +111,12 @@ bnd = bnd(bnd>=1);
         z_interp = interp1( t_impl, z_impl, t, pie.Results.interp1, 'extrap');
         fun =  nansum( (z - z_interp).^2 );
     end
-
 %% add end points
-bnd = cat(xdim, 1, bnd, T);
-bnd = [bnd(diff(bnd) > 0); bnd(end)];
-
+% bnd = cat(xdim, 1, bnd, T);
+% bnd = [bnd(diff(bnd) > 0); bnd(end)];
 %% optimise
-heuristic_bnd = bnd;
-bnd = sort(round(fminsearch(@(y)interp_error(y, p.Results.x,t), bnd)));
+heuristic_bnd = bnd(bnd~=1 & bnd~=T);
+bnd = sort(round(fminsearch(@(y)interp_error(y, p.Results.x, t, T), heuristic_bnd)));
 
 %% add end points
 bnd = cat(xdim, 1, bnd, T);

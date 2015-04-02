@@ -196,8 +196,8 @@ classdef path_xyt<handle
             
         end
         function calc_bounds(obj)
-            obj.vnRectBounds = [ max(1, floor(min(obj.y)) - obj.radius), max(1, floor(min(obj.x)) - obj.radius),  ...
-                ceil(max(obj.y)) + obj.radius, ceil(max(obj.x)) + obj.radius];
+            obj.vnRectBounds = 1+[ max(0, floor(min(obj.xy_roi.y0)) - obj.radius), max(0, floor(min(obj.xy_roi.x0)) - obj.radius),  ...
+                ceil(max(obj.xy_roi.y0)) + obj.radius, ceil(max(obj.xy_roi.x0)) + obj.radius];
         end
         
         function varargout = xyt_mask(obj, varargin)
@@ -208,7 +208,7 @@ classdef path_xyt<handle
             p.KeepUnmatched = true;
             addRequired(p, 'obj', @isobject);
             addRequired(p, 'radius', @isscalar );
-            addOptional(p, 'movPath', '', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && ( numel(x)==3 ) ) ));
+            addOptional(p, 'movPath', '', @(x)( readable(x) || is3dstack(x) ) );
             addOptional(p, 'stoptime', Inf, @isscalar );
             addParamValue(p, 'fast', true, @islogical);
             parse(p, obj, varargin{:});
@@ -224,20 +224,20 @@ classdef path_xyt<handle
             assert( abs(obj.mov_dims(3) - obj.T) < 3 )
             obj.T = obj.mov_dims(3);
             
-            delta_t = obj.T - size(obj.mask, 3);
-            if delta_t > 0
-                if delta_t > 3
-                    warning('time dimension mismatch')
-                end
-                obj.t = 1:obj.T;
-                obj.r = obj.r(obj.t);
-                obj.x = obj.x(obj.t);
-                obj.y = obj.y(obj.t);
-                if ~isempty(obj.mask)
-                    obj.mask = obj.mask(:,:, obj.t);
-                    %                         obj.mask_dims(3) = obj.T;
-                end
-            end
+%             delta_t = obj.T - size(obj.mask, 3);
+%             if delta_t > 0
+%                 if delta_t > 3
+%                     warning('time dimension mismatch')
+%                 end
+%                 obj.t = 1:obj.T;
+%                 obj.r = obj.r(obj.t);
+%                 obj.x = obj.x(obj.t);
+%                 obj.y = obj.y(obj.t);
+%                 if ~isempty(obj.mask)
+%                     obj.mask = obj.mask(:,:, obj.t);
+%                     %                         obj.mask_dims(3) = obj.T;
+%                 end
+%             end
             
             if obj.fast
                 % [y x t]
@@ -284,7 +284,7 @@ classdef path_xyt<handle
                 obj.xyt_mask( varargin{:} )
             end
             
-            if feval( @(x)(ischar(x) && exist(x, 'file')), p.Results.movPath)
+            if readable(p.Results.movPath)
                 mov = cropRectRoiFast(p.Results.movPath, obj);
             else
                 mov = p.Results.movPath;
@@ -351,7 +351,7 @@ classdef path_xyt<handle
             %             end
         end
         
-        function varargout = apply_mask(obj, varargin)
+        function varargout = apply_mask(obj, movPath, varargin)
             %APPLY_MASK -- applies the mask on the movie and returns the
             %intensities of the masked pixels
             
@@ -359,28 +359,38 @@ classdef path_xyt<handle
             p = inputParser;
             p.KeepUnmatched = true;
             addRequired(p, 'obj', @isobject);
-            addRequired(p, 'movPath', @(x)(ischar(x) && exist(x, 'file')) );
+            addRequired(p, 'movPath', @(x)(readable(x) || is3dstack(x)) );
             addOptional(p, 'radius', 0, @isscalar );
             addOptional(p, 'lag', 0, @isscalar );
             addOptional(p, 'stoptime', Inf, @isscalar );
             %             addParamValue(p, 'fast', true, @islogical);
             addParamValue(p, 'out', '', @writeable );
-            parse(p, obj, varargin{:});
+            parse(p, obj, movPath, varargin{:});
             %%
-            if ~(numel(size(obj.mask)) == 3) && p.Results.radius >0
-                if ~isempty(fieldnames(p.Unmatched))
-                    obj.xyt_mask(p.Results.radius, p.Results.movPath, p.Results.lag, p.Results.stoptime, p.Unmatched )
-                else
-                    obj.xyt_mask(p.Results.radius, p.Results.movPath)
-                end
+            if ~isempty(p.Results.radius) && (p.Results.radius > 0)
+                obj.radius = p.Results.radius;
+            end
+                
+            if obj.fast
+                mov = cropRectRoiFast(movPath, obj.xy_roi);
             else
-                error('specify a non-zero radius!')
+                if readable(movPath)
+                    mov = readTifSelected(movPath);
+                else
+                    mov = movPath;
+                end
             end
             
-            if obj.fast
-                mov = cropRectRoiFast(p.Results.movPath, obj);
-            else
-                mov = readTifSelected(p.Results.movPath);
+            if ~(is3dstack(obj.mask)) || ~all(size(mov) == size(obj.mask))
+                if obj.radius > 0
+                    if ~isempty(fieldnames(p.Unmatched))
+                        obj.xyt_mask(obj.radius, movPath, p.Results.lag, p.Results.stoptime, p.Unmatched )
+                    else
+                        obj.xyt_mask(obj.radius, movPath)
+                    end
+                else
+                    error('specify a non-zero radius!')
+                end
             end
             
             obj.pixels = getPixDistr(mov, obj.mask, obj.stoptime);

@@ -7,18 +7,20 @@ classdef modifiable_line < handle
         y0
         x
         y
+        L
     end
     properties
         r0
         r
         N
-        f
+        figure
         ll
         llbg
         ss
         ssbg
         interp1 = 'pchip';
         img = [];
+        im_obj;
         x0_bu % back up
         y0_bu % back up        
         button_slots = [0.02 0.02 0.12 0.04;...
@@ -27,7 +29,10 @@ classdef modifiable_line < handle
             0.40 0.02 0.10 0.04;...
             0.52 0.02 0.10 0.04;...
             0.64 0.02 0.10 0.04;...
+            0.76 0.02 0.10 0.04;...
+            0.88 0.02 0.10 0.04;...
             ];
+        clr_;
     end
     properties (GetAccess = private)
         markersize_;
@@ -35,10 +40,13 @@ classdef modifiable_line < handle
         linewidth_;
         lst_;
         unmatched_args_;
-        clr_;
+
         drawmode = false;
         btn_draw;
         help_text_h
+    end
+    events
+        Modified
     end
         
     methods
@@ -108,7 +116,7 @@ classdef modifiable_line < handle
                 if ndims(obj.img)>2
                     obj.img = scrollable_movie(obj.img);
                 end
-                imagesc(obj.img)
+                obj.im_obj = imagesc(obj.img);
                 hold all;
             end
             if ~isempty(p.Results.linespec)
@@ -135,9 +143,9 @@ classdef modifiable_line < handle
             obj.backup();
             obj.interp;
             %            
-            obj.f = gcf;
-            set(obj.f, 'WindowButtonUpFcn', {@stopDragFcn, obj}, 'CloseRequestFcn', {@close_figure, obj})
-            ax = findall(obj.f,'type','axes');
+            obj.figure = gcf;
+            set(obj.figure, 'WindowButtonUpFcn', {@stopDragFcn, obj}, 'CloseRequestFcn', {@close_figure, obj})
+            ax = findall(obj.figure,'type','axes');
             if ~isempty(ax)
                 axes(ax(1));
                 hold all
@@ -153,7 +161,7 @@ classdef modifiable_line < handle
             
             set(get(gca, 'Children'), 'HitTest','on', 'ButtonDownFcn', {@axes_click, obj})
             
-            varargout = {obj.f};
+            varargout = {obj.figure};
             %% Create push buttons
             obj.btn_draw = uicontrol('Style', 'togglebutton', 'String', 'Draw',...
                 'TooltipString', ['Add points to the end of the line', char(10), 'if up, curve can be modified by pasting intermediate points'],...
@@ -300,7 +308,7 @@ classdef modifiable_line < handle
         end
         %%
         function axes_click(~,~,obj)
-            rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
+            rightClick = strcmp(get(obj.figure, 'SelectionType'), 'alt');
             if obj.drawmode && ~rightClick                
                 pt = get(gca, 'CurrentPoint');
                 x_ = pt(1,1);
@@ -315,7 +323,7 @@ classdef modifiable_line < handle
         end
         %%
         function addPointFcn(~,~, obj, varargin)
-            rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
+            rightClick = strcmp(get(obj.figure, 'SelectionType'), 'alt');
             if rightClick
                 pt = get(gca, 'CurrentPoint');
                 x_ = pt(1,1);
@@ -335,13 +343,13 @@ classdef modifiable_line < handle
         end
         %%
         function stopDragFcn(~,~, obj, varargin)
-            set(obj.f, 'WindowButtonMotionFcn','')
+            set(obj.figure, 'WindowButtonMotionFcn','')
         end
         %%
         function startDragFcn(curr_obj, ~, obj, varargin)
-            rightClick = strcmp(get(obj.f, 'SelectionType'), 'alt');
+            rightClick = strcmp(get(obj.figure, 'SelectionType'), 'alt');
             if ~rightClick
-                set(obj.f, 'WindowButtonMotionFcn', {@dragginFcn, obj, curr_obj, varargin{:}})
+                set(obj.figure, 'WindowButtonMotionFcn', {@dragginFcn, obj, curr_obj, varargin{:}})
             else
                 chldrn = get(obj.ss, 'children');
                 logInd = flipud( chldrn == gco) ;
@@ -386,7 +394,9 @@ classdef modifiable_line < handle
                     warning('replicate control points resolved')
                 end
                 [obj.x, obj.y, obj.r, obj.r0] = interp_implicit(obj.x0, obj.y0, obj.interp1);
+                obj.L = obj.r(end);
             end
+            notify(obj, 'Modified')
         end
     end
     

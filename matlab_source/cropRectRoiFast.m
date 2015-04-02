@@ -5,7 +5,7 @@ function [movie, varargout] = cropRectRoiFast(varargin)
 p = inputParser;
 p.KeepUnmatched = true;
 
-addRequired(p, 'movPath', @(x)(readable(x) || ( isnumeric(x) && (sum(size(x)>1)==3) ) ));
+addRequired(p, 'movPath', @(x)(readable(x) || is3dstack(x) ));
 addRequired(p, 'roiPath', @(x)( readable(x)  || isstruct(x) || isobject(x)) );
 addOptional(p, 'pad', 0, @isscalar );
 addOptional(p, 'frames', [1, Inf], @isnumeric );

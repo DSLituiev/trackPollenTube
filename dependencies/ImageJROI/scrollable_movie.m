@@ -75,37 +75,37 @@ classdef scrollable_movie < handle
                 set(obj.im, 'CData', obj.mov(:,:,obj.tt)) ;
             end
             title(obj.axes, sprintf('frame %u', obj.tt))
-            notify(obj, 'Scroll')
             % set(obj.figure, 'name', sprintf('frame %u', tt))
         end
         
         function setframe_slide(cobj, ~, obj, varargin)
             obj.tt = round(get(cobj, 'Value'));
+            notify(obj, 'Scroll')
             obj.replot_();
         end
         
-        function setframe_wheel(cobj, eventdata, obj, varargin)            
-            type = get(gco, 'type');
-            uicontr_flag = strcmp(type, 'uicontrol');
-            if uicontr_flag
-                steps = get(gco, 'SliderStep');
-                step =  round( steps(2)*obj.T );
-            else
-                step = 1;
-            end
-%             if (strcmp(type, 'image') || uicontr_flag)
-                obj.tt = round(get(obj.slider, 'Value'));
-                if eventdata.VerticalScrollCount > 0
-                    obj.tt = max(1, obj.tt - step);
-                else
-                    obj.tt = min(obj.T, obj.tt + step);
-                end
-                set(obj.slider, 'Value', obj.tt)
-                obj.replot_();
+%         function setframe_wheel(~, eventdata, obj, varargin)            
+%             type = get(gco, 'type');
+%             uicontr_flag = strcmp(type, 'uicontrol');
+%             if uicontr_flag
+%                 steps = get(gco, 'SliderStep');
+%                 step =  round( steps(2)*obj.T );
+%             else
+%                 step = 1;
 %             end
-        end
+% %             if (strcmp(type, 'image') || uicontr_flag)
+%                 obj.tt = round(get(obj.slider, 'Value'));
+%                 if eventdata.VerticalScrollCount > 0
+%                     obj.tt = max(1, obj.tt - step);
+%                 else
+%                     obj.tt = min(obj.T, obj.tt + step);
+%                 end
+%                 set(obj.slider, 'Value', obj.tt)
+%                 setframe_slide(obj.slider, [], obj, varargin)
+% %             end
+%         end
         
-        function imagesc(obj)
+        function varargout = imagesc(obj)
             obj.tt = 1;
             obj.im = imagesc(obj.mov(:,:,obj.tt));
             axis equal
@@ -121,6 +121,7 @@ classdef scrollable_movie < handle
                 'TooltipString',['Scroll through movie frames', char(10),...
                 '[also works with mouse wheel]' ]);
             set(obj.figure, 'WindowScrollWheelFcn', {@setframe_wheel, obj})
+            varargout = {obj.im};
         end
         
 %         function WindowButtonMotionFcn(hObject, ~, obj, varargin)

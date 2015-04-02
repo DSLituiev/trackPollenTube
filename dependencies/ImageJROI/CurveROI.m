@@ -26,15 +26,15 @@ classdef CurveROI < ImageJROI & modifiable_line
                 end
             end
             
-            obj@ImageJROI(args{:});
-            clear args
+            obj@ImageJROI(args{:});            
             
-            if obj.cropped && ~isempty(obj.original_vnRectBounds)
+            if (obj.cropped || ~isempty(obj.original_vnRectBounds)) && isobject(args{2})
                 obj.mnCoordinates(:,1) = obj.mnCoordinates(:,1) + obj.original_vnRectBounds(2);
                 obj.mnCoordinates(:,2) = obj.mnCoordinates(:,2) + obj.original_vnRectBounds(1);
                 obj.cropped = false;
+                obj.parent = args{2};
             end
-            
+%             clear args
             interp_ind = feval(@(x)strcmpi(x, 'pchip') | strcmpi(x, 'linear') | strcmpi(x, 'spline'),  varargin);
             if ~isempty(obj.mnCoordinates)
                 obj = constructCurveROI(obj, varargin{interp_ind});
@@ -159,6 +159,9 @@ classdef CurveROI < ImageJROI & modifiable_line
             fig(ff)
         end
         %}
+        function namestr = getobjname(obj)
+            namestr = evalin('caller','inputname(1)');
+        end
     end
     
 end

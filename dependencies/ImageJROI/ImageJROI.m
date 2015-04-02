@@ -1,6 +1,7 @@
 classdef ImageJROI < handle
     
     properties
+        parent
         filename
         x0
         y0
@@ -155,6 +156,21 @@ classdef ImageJROI < handle
             obj.set_coordinates();
             status = writeImageJRoi(obj.filename, obj);
             notify(obj, 'Saving'); 
+            if ~isempty(obj.parent)
+                notify(obj.parent, 'Saving');
+            end
+        end
+        function [x_from, x_to, y_from, y_to] = frame(obj, varargin)
+            %% check the input parameters
+            p = inputParser;
+            addRequired(p, 'obj', @isobject);
+            addOptional(p, 'pad', 0, @isscalar );
+            parse(p, obj, varargin{:});
+            %%
+            x_from = max(0, obj.vnRectBounds(1) - p.Results.pad) + 1;
+            x_to = obj.vnRectBounds(3) + p.Results.pad + 1;
+            y_from = max(0, obj.vnRectBounds(2) - p.Results.pad) + 1;
+            y_to = obj.vnRectBounds(4) + p.Results.pad + 1;
         end
     end
     
