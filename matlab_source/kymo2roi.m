@@ -27,7 +27,7 @@ parse(p, varargin{:});
 includeDependencies( )
 
 %% extract the object path
-[ z, kymoEdge ] = kymo2path( p.Results.tifPath,  p.Results, p.Unmatched );
+[ z, kymoEdge, kymo ] = kymo2path( p.Results.tifPath,  p.Results, p.Unmatched );
 
 if p.Results.visualize
     lineWidth = 3;
@@ -38,15 +38,15 @@ if p.Results.visualize
 end
 
 %% analyse the speed
-[ ind ] = bendings( z, p.Results, 'visualize', p.Results.visualize, p.Unmatched);
+[ t0, z0 ] = bendings( z, kymo, p.Results, p.Unmatched);
 
 T = numel(z);
 t = (1:T)';
 %% write
 if p.Results.rotate
-    rt_roi = CurveROI('PolyLine', uint16(z(ind)),  uint16(t(ind)));
+    rt_roi = CurveROI('PolyLine', uint16(z0),  uint16(t0));
 else
-    rt_roi = CurveROI('PolyLine',  uint16(t(ind)), uint16(z(ind)));
+    rt_roi = CurveROI('PolyLine',  uint16(t0), uint16(z0));
 end
 
 if ischar(p.Results.outRoiPath)

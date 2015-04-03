@@ -55,10 +55,11 @@ classdef pttrack < handle
                 obj.rt_roi.unbackup();
                 close(obj.fig_kymo)
             end
-            obj.fig_kymo = figure;
             if isempty(obj.rt_roi)
                 obj.kymo2roi();
             end
+            
+            obj.fig_kymo = figure;
             obj.rt_roi.plot(obj.kymogram);
             addlistener( obj.rt_roi, 'Saving', @(x,y)cb_rt_save(obj,x,y) );
             set(obj.fig_kymo, 'WindowScrollWheelFcn', {@setframe_wheel, obj.xy_roi.img})
@@ -132,6 +133,9 @@ classdef pttrack < handle
         %%
         function cb_scroll(obj, scr_mov, varargin)
             if ~isempty(obj.xyt)
+%                 if scr_mov.tt <= obj.xyt.T
+%                     scr_mov.tt = obj.xyt.T;
+%                 end
                 set(obj.xy_pos_marker, 'xdata', obj.xyt.x(scr_mov.tt), 'ydata', obj.xyt.y(scr_mov.tt))
                 if  ~isempty(obj.rt_roi.figure) && ishandle(obj.rt_roi.figure)
                     set(obj.rt_pos_marker_bg, 'xdata', scr_mov.tt*[1,1], 'ydata', obj.xyt.r(scr_mov.tt) + obj.xyt.radius*[-1, 1])

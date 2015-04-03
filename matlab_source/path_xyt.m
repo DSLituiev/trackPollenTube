@@ -220,7 +220,7 @@ classdef path_xyt<handle
             obj.calc_bounds();
             %%
             obj.mov_dims = get_tiff_size( p.Results.movPath );
-            obj.stoptime = min(obj.mov_dims(3), obj.stoptime);
+            obj.stoptime = min(obj.T, min(obj.mov_dims(3), obj.stoptime));
             assert( abs(obj.mov_dims(3) - obj.T) < 3 )
             obj.T = obj.mov_dims(3);
             

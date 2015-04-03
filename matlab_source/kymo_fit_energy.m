@@ -1,4 +1,6 @@
-function fun = kymo_fit_energy(r, t, img)
+function fun = kymo_fit_energy(s, img)
+
+[t, r] = interp_implicit( s(:,1), s(:,2));
 
 epsilon = 1.5;
 R = size(img,1) ;

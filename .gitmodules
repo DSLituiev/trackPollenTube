@@ -1,0 +1,3 @@
+[submodule "dependencies/BasicSnake"]
+	path = dependencies/BasicSnake
+	url = git@https://github.com/DSLituiev/BasicSnake
