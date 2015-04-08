@@ -5,11 +5,16 @@ clc
 %% include dependencies
 includeDependencies( )
 % addpath('/usr/local/MATLAB/R2013b/bin/glnxa64/') % libtiff
-%% define path to the files
-SourceDir = '/home/dima/data/pollen_tubes/Hannes PT Growth'; % '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
-fileName = '1sec_delay5.tif'; % 'dsRed-a-b.tif';
-inRoiName = '1sec_delay5.roi'; % 'path.roi';
+% define path to the files
+SourceDir = '/home/dima/data/pollen_tubes/Hannes PT Growth'; % 
+fileName = '1sec_delay5.tif';
+inRoiName = '1sec_delay5.roi';
 outKymoName = 'kymo.tif';
+% %
+% SourceDir = '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
+% fileName = 'dsRed-a-b.tif';
+% inRoiName = 'path.roi';
+% outKymoName = 'kymo.tif';
 
 tifPath = fullfile(SourceDir, fileName); 
 inRoiPath = fullfile(SourceDir, inRoiName);

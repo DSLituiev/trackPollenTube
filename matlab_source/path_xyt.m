@@ -77,7 +77,7 @@ classdef path_xyt<handle
             obj.T = round(max(obj.rt_roi.x));
             obj.t = (1:obj.T)';
             
-            obj.r_raw = 1 + round( interp1( double(obj.rt_roi.x), double(obj.rt_roi.y), double(obj.t), p.Results.interp1, 'extrap') );
+            obj.r_raw = round( interp1(  1 +double(obj.rt_roi.x),  1 + double(obj.rt_roi.y), double(obj.t), p.Results.interp1, 'extrap') );
             obj.L = max(obj.r_raw);            
             obj.calc_coordinates();
         end
@@ -88,6 +88,7 @@ classdef path_xyt<handle
             obj.r = obj.r_raw - obj.lag;
             obj.r(obj.r<1) = 1;
             obj.r(obj.r>obj.L) = obj.L;
+            obj.r(obj.r > numel(obj.xy_roi.x) ) = numel(obj.xy_roi.x);
             
             obj.x = obj.xy_roi.x(obj.r);
             obj.y = obj.xy_roi.y(obj.r);

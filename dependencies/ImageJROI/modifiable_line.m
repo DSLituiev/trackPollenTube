@@ -141,7 +141,9 @@ classdef modifiable_line < handle
             obj.unmatched_args_ = p.Unmatched;
             %%
             obj.backup();
-            obj.interp;
+            if ~isempty(obj.x0)
+                obj.interp;
+            end
             %            
             obj.figure = gcf;
             set(obj.figure, 'WindowButtonUpFcn', {@stopDragFcn, obj}, 'CloseRequestFcn', {@close_figure, obj})
