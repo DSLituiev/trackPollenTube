@@ -214,7 +214,7 @@ for i = 1:spl{1}.pieces
   % integrate the arclength for the i'th segment
   % using quadgk for the integral. I could have
   % done this part with an ode solver too.
-  seglen(i) = quadgk(@(t) segkernel(t),0,chordlen(i));
+  seglen(i) = quadgk(@(t)segkernel(t),0,chordlen(i));
 end
 
 % and sum the segments

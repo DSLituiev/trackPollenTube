@@ -38,7 +38,7 @@ elseif   numel(maskDim) < numel(movDim) && all(maskDim == movDim(1:numel(maskDim
     reshMask = repmat(mask(:), [1 T]);
     % mask = repmat(mask, [1,1, T]);    
 else
-        error('getPixDistr:DimensionMisMatch', 'the mask does not match the dimension of the movie')
+    error('getPixDistr:DimensionMisMatch', 'the mask does not match the dimension of the movie')
 end    
 
 

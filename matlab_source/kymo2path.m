@@ -34,19 +34,7 @@ end
 q = quantile(kymo(:), p.Results.KYMO_QUANTILE);
 kymo(kymo > q) = q;
 
-    function kymoEdge = raw_edge(kymo, sigma, threshold)        
-        % uses a public domain canny routine which allows anisotropic sigma
-        % and can be [and is] modified to output gradient
-        % the gradient is used to exclude senseless edges
-        % as here one looks for edges from bright on top to dark on bottom,
-        % or dark on left and bright on right, we exlude the rest.
-        [kymoEdge, ~, gr] = canny(kymo, sigma, threshold);
-        kymoEdge( gr{2}-gr{1} < 0) = 0;
-        
-%         figure; imagesc(gr{2}-gr{1})
-    end
-
-kymoEdge = raw_edge(single(kymo), p.Results.EDGE_SIGMA, p.Results.EDGE_THRESH );
+[kymoEdge, kymoEnergy] = raw_kymo_edge(single(kymo), p.Results.EDGE_SIGMA, p.Results.EDGE_THRESH );
 
 kymoEdgeOnlyFw = automatonFilterRemoveBackWardMovements(kymoEdge, 0);
 
@@ -64,7 +52,7 @@ end
 
 kymoEdgeOnlyFw(kymoEdgeOnlyFw<0) = 0;
 
-z =  edge2path( double(kymoEdgeOnlyFw), p.Results.MEDIAN_RADIUS );
+z =  edge2path( double(kymoEdgeOnlyFw), kymoEnergy, p.Results.MEDIAN_RADIUS );
 
 end
 

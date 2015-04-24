@@ -26,6 +26,8 @@ addParamValue(p, 'R',  3, @isscalar);
 addParamValue(p, 'Q_dx',  1/3, @isscalar);
 addParamValue(p, 'threshold_lo', 0.2, @isscalar);
 addParamValue(p, 'threshold_hi',  10, @isscalar);
+addParamValue(p, 'heuristic', true, @(x)(isscalar(x)));
+% addParamValue(p, 'useAsEnergy', false, @(x)(isscalar(x)));
 
 parse(p, varargin{:});
 %%
@@ -62,31 +64,18 @@ xdim = find(size(p.Results.x)>1);
         fun =  nansum( (z - z_interp).^2 );
     end
 %% optimise
-if isempty(p.Results.kymo)
+if isempty(p.Results.kymo) || p.Results.heuristic
     t0 = sort(round(fminsearch(@(y)line_interp_error(y, p.Results.x, t, T), t0)));%% add end points
     t0 = cat(xdim, 1, t0, T);
     t0 = [t0(diff(t0) > 0); t0(end)];
     sqddx = sum_square_ddx(ddx, t0);
     x0 = p.Results.x(t0);
-else
+else    
     t0 = cat(xdim, 1, t0, T);
     x0 = p.Results.x(t0);
-    opt.nPoints = numel(t0);
-    opt.Verbose = true; % p.Results.visualize
-    opt.Alpha = 0.3;
-    opt.Beta = 0;
-    opt.Gamma = 1;
-    opt.Sigma1 = 10;
-    opt.Sigma2 = 1;
-    opt.Sigma3 = 1;
-    opt.Iterations = 500;
-    opt.Kappa = 1.2;
-    opt.Closed= false;
-    opt.AbsTol = 1e-1;
-    opt.Norm = Inf;
-    tmp_ = Snake2D(p.Results.kymo, [x0, t0], opt);
-    t0 = round(tmp_(:,2));
-    x0 = round(tmp_(:,1));
+    [ t0, x0 ] = segment_snake( p.Results.kymo,  t0, x0 );
+    t0 = round(flipud(t0));
+    x0 = round(flipud(x0));
 end
 
 % figure

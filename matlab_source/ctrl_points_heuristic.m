@@ -42,10 +42,14 @@ auxillary_bnds = min_speed_boundaries(dx, large_bnds);
 bnd( dx(bnd)> 1 ) = auxillary_bnds(:,1);
 bnd = sort([bnd(:); auxillary_bnds(:,2)]);
 
-
 sqddx = sum_square_ddx(ddx, bnd);
 bnd = sort([bnd(sqddx > p.Results.threshold_hi)-3; bnd(sqddx > p.Results.threshold_hi)-5; bnd]);
 bnd = bnd(bnd>=1);
+
+dx = diff(x(bnd));
+dt = diff(bnd);
+
+bnd = bnd(logical(dx)|logical(dt));
 
 heuristic_bnd = bnd(bnd~=1 & bnd~=T);
 end

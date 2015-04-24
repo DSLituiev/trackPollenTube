@@ -60,7 +60,22 @@ R = 50;
 bf = binomialFilter(R);
 input_image = -paddedConv2(k_dir ,conv2(bf, bf')).^2;
 
-Iterations = 175;
+%%
+addpath('../../dependencies/BasicSnake/')
+kymo = single(pt.kymogram);
+[ tt0, rr0 ] = segment_snake( kymo, pt.rt_roi.x0, pt.rt_roi.y0 );
+pt.rt_roi.x0 = tt0;
+pt.rt_roi.y0 = rr0;
+figure
+pt.rt_roi.plot()
+%%
+x0 = pt.xy_roi.x0;
+y0 = pt.xy_roi.y0;
+dE_dc = curvewise_edge_energy([x0, y0], k2);
+
+
+%%
+Iterations = 200;
 
 figure
 spl = axes();
@@ -74,27 +89,33 @@ h = scatter(pt.rt_roi.x0, pt.rt_roi.y0,100*pi,'r','.');
 
 opt = optimset('TolX', 1e-3, 'MaxIter', Iterations, 'OutputFcn', @(x,y,z)upd_snake_plot(x,y,z, spl, h, Iterations));
 
+pt.rt_roi.mnCoordinates(end, 1) = T;
 s0 =  pt.rt_roi.mnCoordinates;
+
 fixed = false(size(s0));
 fixed(1,2) = 1;
 fixed(end, 2) = 1;
-
-for ii = 1:4
-    s = sort(round(fminsearch(@(y)kymo_fit_energy(y,  input_image, kymo, fixed, s0), s0, opt )));
-    e0 = kymo_fit_energy(s0, input_image, [], fixed, s0);
+s = s0;
+for ii = 1:1    
+%     e0 = kymo_fit_energy(s0, input_image, [], fixed, s0);
+%     tobereplaced = false(size(s0,1),1);
+%     for jj = 1:size(s0,1)
+%         s1 = s;
+%         s1(jj,:) = s1(jj,:) + 10*rand(1, 2);
+%         s1(s1<1) = 1;
+%         e1 = kymo_fit_energy(s0, input_image, [], fixed, s0);
+%         if e0>e1
+%             tobereplaced(jj) = true;
+%         end
+%         s0 = s;
+%         if fixed(jj,2)
+%             s0(jj,1) = s1(jj,1);
+%         else
+%             s0(jj,:) = s1(jj,:);
+%         end
+%     end
     
-    tobereplaces = false(size(s,1),1);
-    for jj = 1:size(s,1)
-    s1 = s;
-    s1(jj,:) = s1(jj,:) + 10*rand(1,2);
-    s1(s1<1) = 1;
-    e1 = kymo_fit_energy(s0, input_image, [], fixed, s0);
-    if e0>e1
-        tobereplaces(jj) = true;
-    end
-    s0 = s;
-    s0(jj,:) = s1(jj,:);
-    end
+    s = sort(round(fminsearch(@(y)kymo_fit_energy(y,  input_image, kymo, fixed, s0), s0, opt )));
 end
 
 t = s(:,1);

@@ -7,6 +7,7 @@ classdef modifiable_line < handle
         y0
         x
         y
+        theta
         L
     end
     properties
@@ -101,24 +102,30 @@ classdef modifiable_line < handle
             %% check the input parameters
             p = inputParser;
             p.KeepUnmatched = true;
-            addOptional(p, 'linespec', 'm+', @(x)(ischar(x)));
+            addParamValue(p, 'linespec', 'm+', @(x)(ischar(x)));
             addParamValue(p, 'markertype', '+', @(x)( any(strcmpi(x, {'o','+','*','.','x', 's', 'd', '^','v','>','<', 'p', 'h', 'none'}))));
             addParamValue(p, 'linewidth', 3, @(x)(isscalar(x)));
             addParamValue(p, 'markersize', 100, @(x)(isscalar(x)));
             addParamValue(p, 'color', '', @(x)(isscalar(x) || isnumeric(x) ));
             addParamValue(p, 'frame', 1, @(x)(isscalar(x) && isnumeric(x) ));
+            addParamValue(p, 'keepcurve', false, @islogical);
             parse(p, varargin{:});
             %%
-            if nargin> 1
+            if nargin> 1 && ~isempty(img)
                 obj.img = img;
+            end
+            if ~isempty( obj.figure) && ishandle( obj.figure)
+                figure(obj.figure);
             end
             if ~isempty(obj.img)
                 if ndims(obj.img)>2
                     obj.img = scrollable_movie(obj.img);
                 end
                 obj.im_obj = imagesc(obj.img);
-                hold all;
+            else
+                set(gca, 'ydir','reverse')
             end
+            hold all;
             if ~isempty(p.Results.linespec)
                 if feval(@(x)( any(strcmpi(x, {'-', '--', ':', '-.'}))), p.Results.linespec(1) )
                     lst = p.Results.linespec(1);
@@ -141,7 +148,7 @@ classdef modifiable_line < handle
             obj.unmatched_args_ = p.Unmatched;
             %%
             obj.backup();
-            if ~isempty(obj.x0)
+            if ~isempty(obj.x0) && ~p.Results.keepcurve
                 obj.interp;
             end
             %            
@@ -219,6 +226,7 @@ classdef modifiable_line < handle
         end
         %%
         function replot_all(obj)
+            figure(obj.figure)
             obj.replot();
             drawnow
             delete(obj.ss);
@@ -229,6 +237,7 @@ classdef modifiable_line < handle
         function scatter_(obj)
             obj.ss = scatter(obj.x0, obj.y0,  obj.markersize_*0.75,  obj.clr_, ...
                 obj.markertype_, 'linewidth', obj.linewidth_*0.75 );
+            drawnow
         end
         function plot_lines_(obj)
             obj.llbg = plot(obj.x, obj.y, obj.lst_, 'marker', 'none', 'color', 'w', 'linewidth', obj.linewidth_ + 1,  obj.unmatched_args_);
@@ -399,6 +408,13 @@ classdef modifiable_line < handle
                 obj.L = obj.r(end);
             end
             notify(obj, 'Modified')
+        end
+        
+        function varargout = calc_theta(obj)            
+            [~, dr0] = arclength(obj.x , obj.y, 'pchip');
+            obj.theta = interp1( cumsum(dr0) + (obj.r(2)-obj.r(1))/2,...
+                atan2( diff(obj.x), diff(obj.y) ), obj.r , 'pchip', 'extrap');               
+               varargout = {obj.theta};
         end
     end
     

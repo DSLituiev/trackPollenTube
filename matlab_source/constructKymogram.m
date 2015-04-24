@@ -42,7 +42,7 @@ switch kymoMethod
     case 'l1'    %== L1 distance 
         kymoGram = zeros(path.L, T, class(mov));
         for tt=1:T
-            indt = sub2ind(size(mov), round(path.y), round(path.x), repmat( tt, [path.L,1]) );
+            indt = sub2ind(size(mov), round(path.y), round(path.x), repmat( tt, [numel(path.y),1]) );
             kymoGram(:,tt) = mov(indt);
         end
         

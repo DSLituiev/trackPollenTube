@@ -15,8 +15,8 @@ classdef crop_movie
             %% check the input parameters
             p = inputParser;
             p.KeepUnmatched = true;
-            addRequired(p, 'movPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isnumeric(x) && ( numel(size(x))==3 ) ) ) );
-            addRequired(p, 'roiPath', @(x)( (ischar(x) && exist(x, 'file')) || ( isobject(x) ) || ( isstruct(x) ) ) ); %
+            addRequired(p, 'movPath', @(x)( readable(x) || is3dstack(x) ) );
+            addRequired(p, 'roiPath', @(x)( readable(x) || ( isobject(x) ) || ( isstruct(x) ) ) ); %
             addOptional(p, 'padding', 0, @isscalar );
             parse(p, varargin{:});
             %%
@@ -29,29 +29,8 @@ classdef crop_movie
                                 min(obj.mov_size(2), obj.roi.vnRectBounds(4) + obj.padding)];
         end
         
-        function out = sub2ind(obj, x0, y0, z)
-            if any(isnan(x0(:))) || any(isnan(y0(:))) || any(isnan(z(:)))
-                error('nan values!')
-            end
-            outliers_x = x0 <  obj.vnRectBounds(1) | x0 > obj.vnRectBounds(3);
-            outliers_y = y0  <  obj.vnRectBounds(2) | y0 > obj.vnRectBounds(4) ;
-            outliers = outliers_x | outliers_y;
-            
-            x = x0 - obj.vnRectBounds(1);
-            y = y0 - obj.vnRectBounds(2);
-            if size(z) == 1
-                z = repmat(z, size(x));
-            end
-            
-            if any(x(~outliers)<0) || any(y(~outliers)<0)
-                error()
-            end
-            
-            out = NaN(size(outliers));
-            if any(~outliers)
-                linearindex =  sub2ind( size(obj.mov), x(~outliers), y(~outliers), z(~outliers));
-                out(~outliers) = obj.mov(linearindex);
-            end
+        function out = sub2ind(obj, y0, x0, z)
+            out = get_values_sub2ind(obj.mov, y0, x0, z, obj.vnRectBounds);
         end
         
         function [x,y] = xycropped(obj,x,y)

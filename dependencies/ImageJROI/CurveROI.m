@@ -3,6 +3,7 @@ classdef CurveROI < ImageJROI & modifiable_line
     properties
         x
         y
+        theta
         % xy
 %         x0
 %         y0
@@ -159,6 +160,7 @@ classdef CurveROI < ImageJROI & modifiable_line
             fig(ff)
         end
         %}
+        
         function namestr = getobjname(obj)
             namestr = evalin('caller','inputname(1)');
         end

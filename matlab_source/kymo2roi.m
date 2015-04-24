@@ -22,10 +22,10 @@ addRequired(p, 'tifPath', @(x)( readable(x) || ( isnumeric(x) && (sum(size(x)>1)
 addOptional(p, 'outRoiPath', false, @(x)(writable(x) || islogical(x) || x==0 || x==1   )  );
 addOptional(p, 'visualize',  false, @isscalar);
 addParamValue(p, 'rotate', false, @(x)(isscalar(x)));
+addParamValue(p, 'heuristic', true, @(x)(isscalar(x)));
 parse(p, varargin{:});
 %%
 includeDependencies( )
-
 %% extract the object path
 [ z, kymoEdge, kymo ] = kymo2path( p.Results.tifPath,  p.Results, p.Unmatched );
 
@@ -38,8 +38,11 @@ if p.Results.visualize
 end
 
 %% analyse the speed
-[ t0, z0 ] = bendings( z, kymo, p.Results, p.Unmatched);
-
+if  p.Results.heuristic
+    [ t0, z0 ] = bendings( z, kymo, p.Results, p.Unmatched);
+else
+    [ t0, z0 ] = bendings( z, kymoEdge, p.Results, p.Unmatched);
+end
 T = numel(z);
 t = (1:T)';
 %% write
@@ -48,6 +51,10 @@ if p.Results.rotate
 else
     rt_roi = CurveROI('PolyLine',  uint16(t0), uint16(z0));
 end
+
+rt_roi.x = t;
+rt_roi.y = z;
+rt_roi.L = T;
 
 if ischar(p.Results.outRoiPath)
     outRoiPath = p.Results.outRoiPath;
