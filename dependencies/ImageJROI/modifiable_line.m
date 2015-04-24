@@ -410,11 +410,13 @@ classdef modifiable_line < handle
             notify(obj, 'Modified')
         end
         
-        function varargout = calc_theta(obj)            
+        function varargout = calc_theta(obj)
             [~, dr0] = arclength(obj.x , obj.y, 'pchip');
-            obj.theta = interp1( cumsum(dr0) + (obj.r(2)-obj.r(1))/2,...
-                atan2( diff(obj.x), diff(obj.y) ), obj.r , 'pchip', 'extrap');               
-               varargout = {obj.theta};
+%             obj.theta = interp1( cumsum(dr0) + (obj.r(2)-obj.r(1))/2,...
+%                 atan2( diff(obj.x), diff(obj.y) ), obj.r , 'pchip', 'extrap');
+            obj.theta = interp1( cumsum(dr0),...
+                atan2( diff(obj.x), diff(obj.y) ), obj.r , 'pchip', 'extrap');
+            varargout = {obj.theta};
         end
     end
     

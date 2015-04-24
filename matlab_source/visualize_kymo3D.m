@@ -46,7 +46,7 @@ set(ss, 'linestyle', 'none')
 alpha( ss , 0.85 )
 set(gca, 'xcolor',axColor, 'ycolor',axColor, 'zcolor', axColor)
 hold on
-plot3(ptPath.x, ptPath.y, ptPath.t, 'g', 'linewidth', 1.2)
+plot3(ptPath.xt, ptPath.yt, ptPath.t, 'g', 'linewidth', 1.2)
 
 %%
 if ~p.Results.tt

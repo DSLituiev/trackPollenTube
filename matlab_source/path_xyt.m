@@ -20,6 +20,9 @@ classdef path_xyt<handle
         pixels
         rt_roi
         xy_roi
+        pix_color_plot
+        pix_median_marker
+        pix_median
     end
     
     properties
@@ -123,18 +126,21 @@ classdef path_xyt<handle
         end
         
         function varargout = refine_path(obj, varargin)
+        end
+        
+        function varargout = refine_xy(obj, varargin)
             %% check the input parameters
             p = inputParser;
             p.KeepUnmatched = true;
             addRequired(p, 'obj', @isobject);
             addRequired(p, 'movPath', @(x)( readable(x)) || (is3dstack(x)) ) ;
             addOptional(p, 'filter_radius', 15, @isscalar );
-            addOptional(p, 'tangent_radius', 2, @isscalar );
-            addOptional(p, 'norm_radius_coef', 1.5, @isscalar );
+            addOptional(p, 'tangent_radius', 0.5, @isscalar );
+            addOptional(p, 'norm_radius_coef', 2, @isscalar );
             addParamValue(p, 'visualize', false, @isscalar);
             parse(p, obj, varargin{:});
             %% arguments
-            RRt = p.Results.tangent_radius;
+            RRt = ceil(p.Results.tangent_radius * obj.radius);
             drt = (-RRt:1:RRt)';
             
             RRn = ceil(p.Results.norm_radius_coef * obj.radius);
@@ -155,46 +161,20 @@ classdef path_xyt<handle
             end
             %%
             secant_adjustment_t = zeros(obj.T,1);
-            secant_adjustment = zeros(numel(obj.xy_roi.x),1);
-            tanget_displacement = zeros(obj.T,1);
-            theta_normal =  unwrap(obj.xy_roi.theta(obj.r(obj.t))+ pi/4);
-            %             theta = zeros(obj.T,1);
-            %             displacement = zeros(obj.T,1);
-            %%
-%             x0 = zeros(obj.T,1);
-%             y0 = zeros(obj.T,1);
-            
-%             if p.Results.visualize
-%                 figure;
-%             end
+            secant_adjustment = NaN(numel(obj.xy_roi.x),1);
+            theta_tmp = fastmedfilt1d(unwrap(obj.xy_roi.theta), 2 * p.Results.filter_radius+1,...
+                obj.xy_roi.theta(1)*ones(p.Results.filter_radius), obj.xy_roi.theta(end)*ones(p.Results.filter_radius));
+            theta_t =  theta_tmp(obj.r(obj.t));
 
             weights = binomialFilter(4*RRt +1)';
             weights = fliplr(weights(1:2*RRt +1));
             weights = weights./sum(weights);
-            
-            jj = 1;
-            ii = 1;
+%             fgx = figure;
             for tt = 2:(numel(obj.t)-1)
                 if obj.r(tt) < p.Results.norm_radius_coef * obj.radius+1
                     continue
                 end
-%                 if obj.r(tt) == obj.r(tt-1)
-%                     jj = jj +1;
-%                 else
-%                     ii = ii+1;
-%                     jj = 1;
-%                 end
-%                 [theta_normal(tt), x0(tt), y0(tt)] = obj.normal(tt, 0);
-                %%
-                %                 dxt = drt*cos(theta_normal(ii)- pi/4);
-                %                 dyt = drt*sin(theta_normal(ii)- pi/4);
-                %
-                %                 dx = dr*cos(theta_normal(ii));
-                %                 dy = dr*sin(theta_normal(ii));
-                
-                %                 xx = round(x0(ii) + bsxfun(@plus, dr, drt)*rotation_matrix(theta_normal(ii)) );
-                %                 yy = round(y0(ii) + bsxfun(@plus, dr, drt)*rotation_matrix(theta_normal(ii) - pi/4) );
-                cc = round(bsxfun(@plus, mtimesx(cc0, rotation_matrix(theta_normal(tt)-pi/4)), [obj.xt(tt), obj.yt(tt)]));
+                cc = round(bsxfun(@plus, mtimesx(cc0, rotation_matrix(theta_t(tt))), [obj.xt(tt), obj.yt(tt)]));
                 
                 xx = squeeze(cc(:,1,:));
                 yy = squeeze(cc(:,2,:));
@@ -203,62 +183,43 @@ classdef path_xyt<handle
                 else
                     pix = get_values_sub2ind(mov, yy, xx, tt);
                 end
-                
-                
-                %             if p.Results.visualize
-                % figure
-                %                 imagesc(mov(:,:,tt)); axis equal; hold all; scatter(xx(:),yy(:),pi,'k')
-                %                 drawnow
-                %                             end
                 mfr = mov(:,:,tt);
                 bg = quantile(mfr(:), 1/2);
-                pix_bw = double(pix>bg);
-                %                 figure;
-                %                 imagesc( dr(:), drt(:), pix); axis equal; axis tight
+                pix_smooth = conv2(pix, binomialFilter(obj.radius)', 'same');
+%                 figure; imagesc(pix_smooth)
                 
+%                 pix_bw = double(pix_smooth>bg);
                 
-                % sum(pix(:,1:21),2) - sum(pix(:,22:end),2)
+%                 secant_adjustment_t(tt) = weights * ( pix_smooth* dr(:)./sum(pix_smooth, 2));
+                [~, cntr] = max(sum(pix_smooth,1));
+                secant_adjustment_t(tt) = - (cntr - RRn);
                 
-                secant_adjustment_t(tt) = weights * ( pix_bw* dr(:)./sum(pix_bw, 2));
+%                 figure(fgx);
+%                 imagesc( dr(:), drt(:), pix_smooth); axis equal; axis tight; hold all;
+%                 plot(-secant_adjustment_t(tt)*[1,1], drt([1,end]), 'w-', 'linewidth', 2)
                 
-%                 inv_jj = 1/jj;
-%                 secant_adjustment(ii) = (1-inv_jj) * secant_adjustment(ii) + inv_jj* secant_adjustment_t(tt);
-                %% general correction
+%                 figure(fgx); plot(dr(:), sum(pix_smooth,1))
                 
-                %                 xx = round(x0 + bsxfun(@plus, dr, dr') );
-                %                 yy = round(y0 + bsxfun(@plus, dr, dr') );
-                %                 if isobject(mov) && strcmpi(class(mov), 'crop_movie')
-                %                     pix = mov.sub2ind(yy, xx, tt);
-                %                     pix_ = mov.sub2ind(yy_, xx_, tt-1);
-                %                 else
-                %                     pix = get_values_sub2ind(mov, yy, xx, tt);
-                %                     pix_ = get_values_sub2ind(mov, yy_, xx_, tt-1);
-                %                 end
-                %                 xx_ = xx;
-                %                 yy_ = yy;
-                %                 pix(isnan(pix)) = 0; pix_(isnan(pix_)) = 0;
-                %                 xci = xcorr2( pix_./sum(pix_(:)), pix./sum(pix(:)));
-                %                 [~, ci] = max(xci(:));
-                %                 [xc, yc] = ind2sub(size(xci), ci );
-                %                 corr_offset = [ (yc-size(pix,1)), (xc-size(pix,2)) ];
-                %
-                %                 theta(ii) = atan2(corr_offset(2), corr_offset(1));
-                %                 displacement(ii) = norm(corr_offset);
+%                 if p.Results.visualize
+%                     figure
+%                     imagesc(mov(:,:,tt)); axis equal; hold all; scatter(xx(:),yy(:),pi,'w')
+%                     drawnow
+%                 end
+                
             end
             
             prev = 0;
             ii = 1;
-            r_prev = obj.r(1);
-            rinds = (obj.r == obj.r(1));
+            t_prev = obj.r(1);
             while ii < numel(obj.xy_roi.x)
                rinds = (obj.r == ii);
-               secant_adjustment(ii) = nanmedian(secant_adjustment_t(rinds) );
-               if (r_prev + 1 >= obj.r(end))
+               if (t_prev + 1 >= numel(obj.r))
                    secant_adjustment(ii) = prev;
                elseif ~any(rinds) 
-                   secant_adjustment(ii) = (prev + secant_adjustment_t(r_prev+1))/2;
+                   secant_adjustment(ii) = (prev + secant_adjustment_t(t_prev+1))/2;
                else
-                   r_prev = find(rinds, 1, 'last');
+                   secant_adjustment(ii) = nanmedian(secant_adjustment_t(rinds) );
+                   t_prev = find(rinds, 1, 'last');
                end
                prev = secant_adjustment(ii);
                ii = ii +1;
@@ -272,21 +233,43 @@ classdef path_xyt<handle
                 flipud(secant_adjustment(obj.r(end)+1-p.Results.filter_radius:obj.r(end))));
             smooth_sc_adj(isnan(smooth_sc_adj))  = 0;
             
-            x_adjustment = smooth_sc_adj .* cos(obj.xy_roi.theta);
-            y_adjustment = smooth_sc_adj .* sin(obj.xy_roi.theta);
+            x_adjustment = smooth_sc_adj .* cos(obj.xy_roi.theta + pi);
+            y_adjustment = smooth_sc_adj .* -sin(obj.xy_roi.theta + pi);
+            %%
+            smooth_sc_adj_t = ...
+                fastmedfilt1d(secant_adjustment_t, 2 * p.Results.filter_radius+1, ...
+                flipud(secant_adjustment_t(1:p.Results.filter_radius)), ...
+                flipud(secant_adjustment_t(end+1-p.Results.filter_radius:end)));
+            smooth_sc_adj_t(isnan(smooth_sc_adj_t))  = 0;
+            xt_adjustment = smooth_sc_adj_t .* cos(theta_t + pi);
+            yt_adjustment = smooth_sc_adj_t .* -sin(theta_t + pi);
             
             if p.Results.visualize
-                figure;
-                plot(obj.xy_roi.x, obj.xy_roi.y, 'b.-');
-                axis equal; hold all
-                plot(obj.xy_roi.x + x_adjustment, obj.xy_roi.y + y_adjustment, 'r.-')
-                set(gca, 'ydir', 'reverse')
-                legend({'before', 'after'})
                 
                 figure
-                subplot(2,1,1);plot( unwrap(obj.xy_roi.theta) ); ylabel('theta')
+                subplot(2,1,1);plot( theta_t ); ylabel('theta')
+                subplot(2,1,2); plot(secant_adjustment_t, 'rx'); ylabel('normal correction'); xlabel('time, frames')
+                hold all; plot(smooth_sc_adj_t, 'b-')
+                
+                figure
+                subplot(2,1,1);plot( theta_tmp ); ylabel('theta')
                 subplot(2,1,2); plot(secant_adjustment, 'rx'); ylabel('normal correction'); xlabel('time, frames')
                 hold all; plot(smooth_sc_adj, 'b-')
+                
+                figure;
+%                 plot(obj.xy_roi.x, obj.xy_roi.y, 'b.-');
+%                 axis equal; hold all
+%                 plot(obj.xy_roi.x + x_adjustment, obj.xy_roi.y + y_adjustment, 'r.-')
+%                 set(gca, 'ydir', 'reverse')
+%                 legend({'before', 'after'})
+                
+%                 figure;
+                plot(obj.xt, obj.yt, 'g.-');
+                axis equal; hold all
+                plot(obj.xt + xt_adjustment, obj.yt + yt_adjustment, 'm.-')
+                set(gca, 'ydir', 'reverse')
+                legend({'before', 'after', 'before(t)', 'after(t)'})
+
 %                 figure; 
 %                 plot(theta_normal)
 %                 hold all;
@@ -296,6 +279,12 @@ classdef path_xyt<handle
             obj.xy_roi.y = obj.xy_roi.y + y_adjustment;
             obj.xy_roi.calc_theta();
             obj.calc_coordinates();
+            
+            if p.Results.visualize
+                plot(obj.xt, obj.yt, 'b.-');
+                set(gca, 'ydir', 'reverse')
+                legend({'before(t)', 'after(t)', 'after(t, interp)'})
+            end
             %%
             for ii = 1:numel(obj.xy_roi.r0)
                 [~, ind] = min((obj.xy_roi.x0(ii) - obj.xy_roi.x).^2 + (obj.xy_roi.y0(ii) - obj.xy_roi.y).^2);
@@ -303,13 +292,41 @@ classdef path_xyt<handle
                 obj.xy_roi.y0(ii) = obj.xy_roi.y(ind);
             end
             
-            if p.Results.visualize
-                figure; obj.xy_roi.plot([],'keepcurve',true)
+%             if p.Results.visualize
+%                 figure; obj.xy_roi.plot([],'keepcurve',true)
+%             end
+            if nargout>0
+                varargout{1} = constructKymogram(obj.xy_roi, mov);
+            end            
+        end
+        function refine_rt(obj, varargin)
+            %% check the input parameters
+            p = inputParser;
+            p.KeepUnmatched = true;
+            addRequired(p, 'obj', @isobject);
+            addRequired(p, 'movPath', @(x)( readable(x)) || (is3dstack(x)) ) ;
+            addOptional(p, 'filter_radius', 15, @isscalar );
+            addOptional(p, 'tangent_radius', 2, @isscalar );
+            addOptional(p, 'norm_radius_coef', 1.5, @isscalar );
+            addParamValue(p, 'visualize', false, @isscalar);
+            parse(p, obj, varargin{:});
+            %% arguments
+            RRt = p.Results.tangent_radius;
+            drt = (-RRt:1:RRt)';
+            
+            RRn = ceil(p.Results.norm_radius_coef * obj.radius);
+            dr = permute( -RRn:1:RRn, [1,3,2]);
+            cc0 = [bsxfun(@mtimes, ones(size(drt)), dr), bsxfun(@plus, drt, ones(size(dr)))];
+            
+            if feval( @(x)(ischar(x) && exist(x, 'file')), p.Results.movPath)
+                mov = crop_movie(p.Results.movPath, obj, 2 * obj.radius);
+            else
+                mov = p.Results.movPath;
             end
             %% coordinates for tangent tracking
             tt = 1;
             
-            cc = round(bsxfun(@plus, mtimesx(cc0, rotation_matrix(theta_normal(tt) + pi/4)),[obj.xt(tt), obj.yt(tt)]));
+            cc = round(bsxfun(@plus, mtimesx(cc0, rotation_matrix(theta_normal(tt) + pi/2)),[obj.xt(tt), obj.yt(tt)]));
             xx_ = squeeze(cc(:,1,:));
             yy_ = squeeze(cc(:,2,:));
             
@@ -324,8 +341,9 @@ classdef path_xyt<handle
             end
 %             fxc = figure();
             %% tangent correction
+            tanget_displacement = zeros(size(obj.t));
             for tt = 2:(numel(obj.t)-1)
-                cc = round(bsxfun(@plus, mtimesx(cc0, rotation_matrix(theta_normal(tt) + pi/4)),[obj.xt(tt), obj.yt(tt)]));                
+                cc = round(bsxfun(@plus, mtimesx(cc0, rotation_matrix(theta_normal(tt) + pi/2)),[obj.xt(tt), obj.yt(tt)]));                
                 xx = squeeze(cc(:,1,:));                
                 yy = squeeze(cc(:,2,:));
                 
@@ -338,8 +356,7 @@ classdef path_xyt<handle
                 end
                 xx_ = xx;
                 yy_ = yy;
-                
-%                 figure(fxc); plot(sum(pix,1), 'b-'); hold on;plot( sum(pix_,1) , 'r-'); legend({'tt', 'tt-1'})
+                figure(fxc); plot(sum(pix,1), 'b-'); hold on;plot( sum(pix_,1) , 'r-'); legend({'tt', 'tt-1'})
                 
                 xci = xcov( sum(pix,1), sum(pix_,1) , RRn, 'unbiased');
                 [~, dr_] = max(xci(1:RRn));
@@ -368,27 +385,12 @@ classdef path_xyt<handle
             obj.rt_roi.y = obj.r_raw;
             %%
             obj.calc_coordinates();
-            %             seglen =  sqrt(sum(diff(data,1,1).^2,2));
-            %             t = cumsum([0;seglen]);
-            %             obj.xy_roi.x = interp1(seglen, obj.xt, 1:obj.xy_roi.L, 'pchip');
-            %             obj.xy_roi.y = interp1(seglen, obj.yt, 1:obj.xy_roi.L, 'pchip');
-            
-            if nargout>0
-                varargout{1} = constructKymogram(obj.xy_roi, mov);
-            end
             
             if ~(numel(size(obj.mask)) == 3)
                 obj.xyt_mask( p.Results.movPath, p.Results.filter_radius)
             end
-            %             [x_, y_] = mov.xycropped(x0, y0);
-            
-            %             figure; imagesc(mov.mov(:,:, tt));
-            %             axis equal
-            %             hold all;
-            %             plot(xx, yy, 'k-', 'linewidth',1.5)
-            %             plot(x0, y0, 'kx', 'linewidth',2)
-            
         end
+        
         function calc_bounds(obj)
             obj.vnRectBounds = 1+[ max(0, floor(min(obj.xy_roi.y0)) - obj.radius), max(0, floor(min(obj.xy_roi.x0)) - obj.radius),  ...
                 ceil(max(obj.xy_roi.y0)) + obj.radius, ceil(max(obj.xy_roi.x0)) + obj.radius];
@@ -618,12 +620,14 @@ classdef path_xyt<handle
                 f = figure('name', 'pixel intensities');
             end
             spl(1) = subplot(2,1,1);
-            imagesc(obj.pixels')
+            obj.pix_color_plot = imagesc(obj.pixels');
             ylabel('pixel index')
             title('pixel intensities within the mask')
             spl(2) = subplot(2,1,2);
-            yy = obj.median();
-            plot(1:numel(yy), yy)
+            obj.pix_median = obj.median();
+            plot(1:numel(obj.pix_median), obj.pix_median);
+            hold on
+            obj.pix_median_marker = plot(1, obj.pix_median(1), 'r.', 'markersize', pi*9);
             ylabel('median intensity')
             xlabel('time (frames)')
             set(spl, 'xlim', [1, obj.T])

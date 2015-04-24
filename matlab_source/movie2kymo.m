@@ -22,17 +22,16 @@ function [ varargout ] = movie2kymo( varargin )
 %
 
 %% process arguments
-[cropped_roi, mov, interpolation, m4epsilon, roiPath, kymoPath, movPath] = movie2kymo_args( varargin{:} );
+[cropped_roi, mov, interpolation, m4epsilon, roiPath, kymoPath, movPath, unmatched] = movie2kymo_args( varargin{:} );
 %% construct kymogram
 kymogram = constructKymogram(cropped_roi, mov, interpolation, m4epsilon);
 %% save the kymogram if requested
 
-
 if  ~isempty( kymoPath )
     opts= {};
-    fn = fieldnames(p.Unmatched);
+    fn = fieldnames(unmatched);
     for ii = 1:numel(fn)
-        opts = {opts{:}, fn{ii}, p.Unmatched.(fn{ii})};
+        opts = {opts{:}, fn{ii}, unmatched.(fn{ii})};
     end
     imwrite(kymogram, kymoPath, opts{:})
 end

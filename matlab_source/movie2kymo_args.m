@@ -61,6 +61,6 @@ elseif p.Results.kymoPath
 else
     kymoPath = '';
 end
-varargout = {p.Results.interpolation, p.Results.m4epsilon, roiPath, kymoPath, movPath};
+varargout = {p.Results.interpolation, p.Results.m4epsilon, roiPath, kymoPath, movPath, p.Unmatched};
 end
 

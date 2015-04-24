@@ -67,7 +67,7 @@ classdef pttrack < handle
             addOptional(p, 'keepcurve_flag', false, @islogical );
             parse(p, obj, varargin{:});
             %% arguments
-            if isempty(obj.xyt)
+            if isempty(obj.xyt) || isempty(obj.xyt.rt_roi)
                 obj.kymo2roi('heuristic', p.Results.heuristic_flag);
             end
             
@@ -115,15 +115,16 @@ classdef pttrack < handle
 %             obj.xyt.rt_roi.x0 = round(t0);
 %             obj.xyt.rt_roi.y0 = round(x0);
 %             obj.xyt.rt_roi.replot_all()         
-            obj.kymogram = obj.xyt.refine_path(obj.mov, 'visualize', true);
+            obj.kymogram = obj.xyt.refine_xy(obj.mov, 'visualize', true);
             
             obj.xy_roi = obj.xyt.xy_roi;
+            obj.xy_roi.replot();
 %             delete(obj.xyt);
 %             obj.kymo2roi('heuristic', true);
             
 %             obj.fig_kymo = figure;
 %             obj.xyt.rt_roi.plot(obj.kymogram, 'm+', 'keepcurve', true);
-            cb_plot_kymo([],[],obj, true, true);
+%             cb_plot_kymo([],[],obj, true, true);
         end
         
         %%
@@ -149,6 +150,7 @@ classdef pttrack < handle
 %             obj.xyt.calc_coordinates()
             obj.xyt.apply_mask(obj.xy_roi.img.mov, obj.xyt.radius);
             obj.fig_pix = obj.xyt.plot_pixels(obj.fig_pix, 'movPath', obj.xy_roi.img.mov, 'radius', obj.xyt.radius);
+            obj.cb_scroll(obj.xy_roi.img)
             varargout{1} = obj.fig_pix;
         end
         %%
@@ -160,6 +162,7 @@ classdef pttrack < handle
                 obj.xyt.xyt_mask(obj.xy_roi.img.mov, obj.xyt.radius)
                 obj.draw_pixels();
             end
+            obj.cb_scroll(obj.xy_roi.img)
         end
         %%
         function out = kymo(obj,varargin)
@@ -203,6 +206,9 @@ classdef pttrack < handle
                 if  ~isempty(obj.xyt.rt_roi.figure) && ishandle(obj.xyt.rt_roi.figure)
                     set(obj.rt_pos_marker_bg, 'xdata', scr_mov.tt*[1,1], 'ydata', obj.xyt.r(scr_mov.tt) + obj.xyt.radius*[-1, 1])
                     set(obj.rt_pos_marker, 'xdata', scr_mov.tt*[1,1], 'ydata', obj.xyt.r(scr_mov.tt) + obj.xyt.radius*[-1, 1])
+                end
+                if ~isempty(obj.fig_pix) && ishandle(obj.fig_pix) && ishandle(obj.xyt.pix_median_marker)
+                    set(obj.xyt.pix_median_marker, 'xdata', scr_mov.tt, 'ydata', obj.xyt.pix_median(scr_mov.tt) )
                 end
             end
         end
