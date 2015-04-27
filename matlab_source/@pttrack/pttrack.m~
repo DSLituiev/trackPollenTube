@@ -33,7 +33,6 @@ classdef pttrack < handle
         draw_pix_mode = false;
         fret_formula
         ref_ch = 1; % reference (most static) channel
-        mov_final_ = [];
     end
     
     methods        
@@ -43,23 +42,14 @@ classdef pttrack < handle
             addRequired(p, 'mov1_filename', @ischar);
             addOptional(p, 'mov2_filename', '', @ischar);
             addOptional(p, 'fret_formula', @(x,y)(y./x), @(x)isa(x, 'function_handle'));
-            addOptional(p, 'filter_radius', 3, @isscalar);
             parse(p,  varargin{:});
             %%         
             obj.mov_filename = p.Results.mov1_filename;
-
+            obj.mov2_filename = p.Results.mov2_filename;
             obj.fret_formula = p.Results.fret_formula;
             [obj.kymogram, obj.mov, obj.xy_roi, obj.roiPath, ...
                 obj.kymoPath, obj.movPath, obj.kymo_interp, obj.m4epsilon] = ...
                 movie2kymo( varargin{:} );
-            if ndims(obj.mov) == 4
-                filter_kernel = min(9, p.Results.filter_radius )*[1,1];
-                m1 = medfilt3( squeeze(obj.mov(:,:,1,:)), filter_kernel );
-                m2 = medfilt3( squeeze(obj.mov(:,:,2,:)), filter_kernel);
-                obj.mov_final_ = obj.fret_formula(single(m1), single(m2));
-                obj.mov_final_(isinf(obj.mov_final_)) = NaN;
-                clear m1 m2                
-            end
         end
         %%
         function plot(obj, varargin)
@@ -180,10 +170,18 @@ classdef pttrack < handle
                 close(obj.fig_pix)
             end
             obj.xyt.fast = false;
-%             if obj.xy_roi.img.color && ~obj.xy_roi.img.rgb
-%             else
-                obj.xyt.apply_mask(obj.mov_final, obj.xyt.radius);
-%             end
+            if obj.xy_roi.img.color && ~obj.xy_roi.img.rgb
+                %                 mov2 = cropRectRoiFast(obj.mov2_filename);
+                filter_kernel = min(7, floor(obj.xyt.radius/2))*[1,1];
+                m1 = medfilt3( squeeze(obj.mov(:,:,1,:)), filter_kernel );
+                m2 = medfilt3( squeeze(obj.mov(:,:,2,:)), filter_kernel);
+                inp_mov = obj.fret_formula(single(m1), single(m2));
+                inp_mov(isinf(inp_mov)) = NaN;
+                clear m1 m2
+                obj.xyt.apply_mask(inp_mov, obj.xyt.radius);
+            else
+                obj.xyt.apply_mask(obj.xy_roi.img.mov, obj.xyt.radius);
+            end
             
             obj.fig_pix = obj.xyt.plot_pixels(obj.fig_pix, 'movPath', obj.xy_roi.img.mov, 'radius', obj.xyt.radius);
             obj.cb_scroll(obj.xy_roi.img)
@@ -302,10 +300,8 @@ classdef pttrack < handle
                 case '.'                    
                     
                     if any( strcmpi(S(1).subs, {'mean','median', 'std', 'var', 'quantile'} ))
-                        S(2).type = '()';
-                        S(2).subs = [{obj.mov_final()}, S(2).subs];
-                        [varargout{1:nargout}] = builtin('subsref', obj.xyt, S);  % as per documentation
-                        return
+                        S(2).subs = {obj.mov, S(2).subs{:}};
+                            [varargout{1:nargout}] = builtin('subsref', obj.xyt, S);  % as per documentation
                     end
                     
                     objs = {obj, obj.xyt, obj.xy_roi.img};
@@ -323,15 +319,6 @@ classdef pttrack < handle
                         rethrow(errs{1})
                     end
             end
-        end
-        function out = mov_final(obj)
-           if ndims(obj.mov) == 3
-               out = obj.mov;
-           elseif ndims(obj.mov) == 4
-               out = obj.mov_final_;
-           else
-               error('movie dimension is neither 3 nor 4.')
-           end
         end
     end
     

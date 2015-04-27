@@ -42,7 +42,8 @@ if readable(p.Results.movPath)
         [x_from , x_to ],...
         [y_from , y_to ], p.Results.frames);
 else
-    T = size( p.Results.movPath, 3);
+    sz = size( p.Results.movPath );
+    T = sz(end);
     if ~isempty(p.Results.frames)
         t_from = max(1, p.Results.frames(1));
         t_to = min(T, p.Results.frames(end));
@@ -50,7 +51,11 @@ else
         t_from = 1;
         t_to = T;
     end
-    movie = p.Results.movPath( x_from:x_to, y_from:y_to, t_from:t_to );
+    if numel(sz) == 3
+        movie = p.Results.movPath( x_from:x_to, y_from:y_to, t_from:t_to );
+    elseif numel(sz) == 4
+        movie = p.Results.movPath( x_from:x_to, y_from:y_to, :, t_from:t_to );
+    end
 end
 
 if nargout>1

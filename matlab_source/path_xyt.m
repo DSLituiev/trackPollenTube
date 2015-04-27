@@ -140,6 +140,7 @@ classdef path_xyt<handle
             addParamValue(p, 'visualize', false, @isscalar);
             parse(p, obj, varargin{:});
             %% arguments
+            
             RRt = ceil(p.Results.tangent_radius * obj.radius);
             drt = (-RRt:1:RRt)';
             
@@ -153,6 +154,9 @@ classdef path_xyt<handle
             else
                 mov = p.Results.movPath;
             end
+            
+            filter_radius = min(p.Results.filter_radius , ...
+                floor(min((obj.r(end)-obj.r(1)) , obj.T)/4) -1 );
             %%
             obj.xy_roi.calc_theta();
             %%
@@ -162,8 +166,8 @@ classdef path_xyt<handle
             %%
             secant_adjustment_t = zeros(obj.T,1);
             secant_adjustment = NaN(numel(obj.xy_roi.x),1);
-            theta_tmp = fastmedfilt1d(unwrap(obj.xy_roi.theta), 2 * p.Results.filter_radius+1,...
-                obj.xy_roi.theta(1)*ones(p.Results.filter_radius), obj.xy_roi.theta(end)*ones(p.Results.filter_radius));
+            theta_tmp = fastmedfilt1d(unwrap(obj.xy_roi.theta), 2 * filter_radius+1,...
+                obj.xy_roi.theta(1)*ones(filter_radius), obj.xy_roi.theta(end)*ones(filter_radius));
             theta_t =  theta_tmp(obj.r(obj.t));
 
             weights = binomialFilter(4*RRt +1)';
@@ -182,6 +186,10 @@ classdef path_xyt<handle
                     pix = mov.sub2ind(yy, xx, tt);
                 else
                     pix = get_values_sub2ind(mov, yy, xx, tt);
+                end
+                if sum(isnan(pix(:))) > numel(pix)/2
+                    warning('nans!')
+                    continue
                 end
                 mfr = mov(:,:,tt);
                 bg = quantile(mfr(:), 1/2);
@@ -228,18 +236,18 @@ classdef path_xyt<handle
             smooth_sc_adj = zeros(size(secant_adjustment));
             
             smooth_sc_adj(obj.r(1):obj.r(end)) = ...
-                fastmedfilt1d(secant_adjustment(obj.r(1):obj.r(end)), 2 * p.Results.filter_radius+1, ...
-                flipud(secant_adjustment(obj.r(1):obj.r(1)-1+p.Results.filter_radius)), ...
-                flipud(secant_adjustment(obj.r(end)+1-p.Results.filter_radius:obj.r(end))));
+                fastmedfilt1d(secant_adjustment(obj.r(1):obj.r(end)), 2 * filter_radius +1, ...
+                flipud(secant_adjustment(obj.r(1):obj.r(1)-1 + filter_radius)), ...
+                flipud(secant_adjustment(obj.r(end)+1- filter_radius:obj.r(end))));
             smooth_sc_adj(isnan(smooth_sc_adj))  = 0;
             
             x_adjustment = smooth_sc_adj .* cos(obj.xy_roi.theta + pi);
             y_adjustment = smooth_sc_adj .* -sin(obj.xy_roi.theta + pi);
             %%
             smooth_sc_adj_t = ...
-                fastmedfilt1d(secant_adjustment_t, 2 * p.Results.filter_radius+1, ...
-                flipud(secant_adjustment_t(1:p.Results.filter_radius)), ...
-                flipud(secant_adjustment_t(end+1-p.Results.filter_radius:end)));
+                fastmedfilt1d(secant_adjustment_t, 2 * filter_radius+1, ...
+                flipud(secant_adjustment_t(1:filter_radius)), ...
+                flipud(secant_adjustment_t(end+1-filter_radius:end)));
             smooth_sc_adj_t(isnan(smooth_sc_adj_t))  = 0;
             xt_adjustment = smooth_sc_adj_t .* cos(theta_t + pi);
             yt_adjustment = smooth_sc_adj_t .* -sin(theta_t + pi);
@@ -364,8 +372,8 @@ classdef path_xyt<handle
 %                  figure(fxc); plot(dr(:), xci)
 %                 tanget_displacement(tt) = xci *  dr(:) / sum(xci);
             end
-            smooth_tg_adj = fastmedfilt1d(tanget_displacement, 2 * p.Results.filter_radius+1,...
-                flipud(tanget_displacement(1:p.Results.filter_radius)),  flipud(tanget_displacement(end+1-p.Results.filter_radius:end)));
+            smooth_tg_adj = fastmedfilt1d(tanget_displacement, 2 * filter_radius+1,...
+                flipud(tanget_displacement(1:filter_radius)),  flipud(tanget_displacement(end+1-filter_radius:end)));
             %           smooth_r_adj = conv( r_adjustment, binomialFilter(2* p.Results.filter_radius + 1), 'same');
             smooth_tg_adj(isnan(smooth_tg_adj))  = 0;
             if p.Results.visualize
@@ -387,7 +395,7 @@ classdef path_xyt<handle
             obj.calc_coordinates();
             
             if ~(numel(size(obj.mask)) == 3)
-                obj.xyt_mask( p.Results.movPath, p.Results.filter_radius)
+                obj.xyt_mask( p.Results.movPath, filter_radius)
             end
         end
         
@@ -403,7 +411,7 @@ classdef path_xyt<handle
             p = inputParser;
             p.KeepUnmatched = true;
             addRequired(p, 'obj', @isobject);
-            addRequired(p, 'movPath', @(x)( readable(x) || is3dstack(x) || numel(x) == 3 ) );
+            addRequired(p, 'movPath', @(x)( readable(x) || is3dstack(x) || is4dstack(x) || numel(x) == 3 ) );
             addRequired(p, 'radius', @isscalar );
             addOptional(p, 'stoptime', Inf, @isscalar );
             addParamValue(p, 'fast', true, @islogical);
@@ -421,9 +429,9 @@ classdef path_xyt<handle
                 obj.mov_dims = get_tiff_size( p.Results.movPath );
             end
             
-            obj.stoptime = min(obj.T, min(obj.mov_dims(3), obj.stoptime));
-            assert( abs(obj.mov_dims(3) - obj.T) < 3 )
-            obj.T = obj.mov_dims(3);
+            obj.stoptime = min(obj.T, min(obj.mov_dims(end), obj.stoptime));
+            assert( abs(obj.mov_dims(end) - obj.T) < 3 )
+            obj.T = obj.mov_dims(end);
             
             %             delta_t = obj.T - size(obj.mask, 3);
             %             if delta_t > 0
@@ -557,7 +565,7 @@ classdef path_xyt<handle
             p = inputParser;
             p.KeepUnmatched = true;
             addRequired(p, 'obj', @isobject);
-            addRequired(p, 'movPath', @(x)(readable(x) || is3dstack(x)) );
+            addRequired(p, 'movPath', @(x)(readable(x) || is3dstack(x) || is4dstack(x)) );
             addOptional(p, 'radius', 0, @isscalar );
             addOptional(p, 'lag', 0, @isscalar );
             addOptional(p, 'stoptime', Inf, @isscalar );
@@ -620,12 +628,18 @@ classdef path_xyt<handle
                 f = figure('name', 'pixel intensities');
             end
             spl(1) = subplot(2,1,1);
-            obj.pix_color_plot = imagesc(obj.pixels');
+            if ndims(obj.pixels) > 2
+                scrmo = scrollable_movie(obj.pixels);
+                obj.pix_color_plot = imagesc(scrmo);
+            else
+                obj.pix_color_plot = imagesc(obj.pixels);
+            end
+%             axis tight
             ylabel('pixel index')
             title('pixel intensities within the mask')
             spl(2) = subplot(2,1,2);
             obj.pix_median = obj.median();
-            plot(1:numel(obj.pix_median), obj.pix_median);
+            plot((1:size(obj.pix_median,1))', obj.pix_median);
             hold on
             obj.pix_median_marker = plot(1, obj.pix_median(1), 'r.', 'markersize', pi*9);
             ylabel('median intensity')
@@ -641,35 +655,35 @@ classdef path_xyt<handle
             if isempty(obj.pixels)
                 obj.apply_mask(varargin{:})
             end
-            y = nanmedian(obj.pixels, 2);
+            y = squeeze(nanmedian(obj.pixels, 2));
         end
         function y = mean(obj, varargin)
             %%
             if isempty(obj.pixels)
                 obj.apply_mask(varargin{:})
             end
-            y = nanmean(obj.pixels, 2);
+            y = squeeze(nanmean(obj.pixels, 2));
         end
         function y = std(obj, varargin)
             %%
             if isempty(obj.pixels)
                 obj.apply_mask(varargin{:})
             end
-            y = nanstd(obj.pixels, 2);
+            y = squeeze(nanstd(obj.pixels, 2));
         end
         function y = var(obj, varargin)
             %%
             if isempty(obj.pixels)
                 obj.apply_mask(varargin{:})
             end
-            y = nanvar(obj.pixels, 2);
+            y = squeeze(nanvar(obj.pixels, 2));
         end
         function y = quantile(obj, p, varargin)
             %%
             if isempty(obj.pixels)
                 obj.apply_mask(varargin{:})
             end
-            y = quantile(obj.pixels, p, 2);
+            y = squeeze(quantile(obj.pixels, p, 2));
         end
     end
     

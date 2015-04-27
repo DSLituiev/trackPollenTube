@@ -11,14 +11,19 @@ includeDependencies( )
 % inRoiName = '1sec_delay5.roi';
 % outKymoName = 'kymo.tif';
 % %
-SourceDir = '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
-fileName = 'dsRed-a-b.tif';
-inRoiName = 'path.roi';
-outKymoName = 'kymo.tif';
+% SourceDir = '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
+% fileName = 'dsRed-a-b.tif';
+% inRoiName = 'path.roi';
+% outKymoName = 'kymo.tif';
+
+SourceDir = '../testcases/Aurel/';
+fileName = '2012_02_13_WT13_Series005.tif';
+inRoiName = '2012_02_13_WT13_Series005.tif';
+% outKymoName = 'kymo.tif';
 
 tifPath = fullfile(SourceDir, fileName); 
 inRoiPath = fullfile(SourceDir, inRoiName);
-outKymoPath = fullfile(SourceDir, outKymoName);
+% outKymoPath = fullfile(SourceDir, outKymoName);
 
 % delete(inRoiPath)
 

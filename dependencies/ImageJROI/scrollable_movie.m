@@ -14,7 +14,10 @@ classdef scrollable_movie < handle
         figure
         axes
         slider;
+        slider_ch;
         color = false;
+        rgb = false;
+        channel = 1;
     end
     
     events
@@ -60,17 +63,23 @@ classdef scrollable_movie < handle
             elseif feval( @(x)(isnumeric(x) && ( numel(size(x))>=3 ) ), movPath )
                 obj.mov = movPath;
                 obj.mov_size = size(obj.mov);
+            else
+                obj.mov_size = ones(3,1);
+                obj.mov_size(1:ndims(obj.mov)) = size(obj.mov);                
             end
             
             obj.T = obj.mov_size(end);
             if ndims(obj.mov)> 3
                 obj.color = true;
+                if size(obj.mov,3) == 3
+                    obj.rgb = true;
+                end
             end
         end
         
         function replot_(obj, varargin)
             if obj.color
-                set(obj.im, 'CData', obj.mov(:,:, :,obj.tt)) ;
+                set(obj.im, 'CData', obj.mov(:, :, obj.channel, obj.tt)) ;
             else
                 set(obj.im, 'CData', obj.mov(:,:,obj.tt)) ;
             end
@@ -84,6 +93,10 @@ classdef scrollable_movie < handle
             obj.replot_();
         end
         
+        function setchannel_slide(cobj, ~, obj, varargin)
+            obj.channel = round(get(cobj, 'Value'));            
+            obj.replot_();
+        end
 %         function setframe_wheel(~, eventdata, obj, varargin)            
 %             type = get(gco, 'type');
 %             uicontr_flag = strcmp(type, 'uicontrol');
@@ -116,11 +129,20 @@ classdef scrollable_movie < handle
                 'Min',1,'Max',obj.T,'Value', obj.tt,...
                 'SliderStep', [1/obj.T, 10/obj.T], ...
                 'Units','normalized', ...
-                'Position', [0.95 0.11 0.03 0.75],...
+                'Position', [0.95 0.11 0.03 0.72],...
                 'Callback', {@setframe_slide, obj},...
                 'TooltipString',['Scroll through movie frames', char(10),...
                 '[also works with mouse wheel]' ]);
             set(obj.figure, 'WindowScrollWheelFcn', {@setframe_wheel, obj})
+            if obj.color && ~obj.rgb 
+                obj.slider_ch = uicontrol('Style', 'slider',...
+                    'Min',1,'Max', size(obj.mov, 3) ,'Value', obj.tt,...
+                    'SliderStep', [1, 1], ...
+                    'Units','normalized', ...
+                    'Position', [0.95 0.86 0.03 0.06],...
+                    'Callback', {@setchannel_slide, obj},...
+                    'TooltipString','Scroll through movie channels');
+            end
             varargout = {obj.im};
         end
         

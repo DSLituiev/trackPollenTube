@@ -26,7 +26,7 @@ if any(y(~outliers)<0) || any(x(~outliers)<0)
 end
 
 out = NaN(size(outliers));
-if any(~outliers)
+if any(~outliers(:))
     linearindex =  sub2ind( size(mov), y(~outliers), x(~outliers), z(~outliers));
     out(~outliers) = mov(linearindex);
 end
