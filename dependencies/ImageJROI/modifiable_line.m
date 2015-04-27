@@ -58,9 +58,9 @@ classdef modifiable_line < handle
                 obj.y0 = sort(100*rand(N,1));
             else
                 obj.x0 = varargin{1};
-                obj.y0 = varargin{2};
+                obj.y0 = varargin{2};                
+                obj.backup();
             end
-            obj.backup();
         end
         %%
         function backup(obj)
@@ -69,8 +69,12 @@ classdef modifiable_line < handle
         end
         %%
         function unbackup(obj)
+            if ~isempty(obj.x0_bu) && ~isempty(obj.y0_bu)
             obj.x0 = obj.x0_bu; % back up
             obj.y0 = obj.y0_bu; % back up
+            else
+                warning('no backup found')
+            end
         end
         
         function close_figure(~,~, obj)

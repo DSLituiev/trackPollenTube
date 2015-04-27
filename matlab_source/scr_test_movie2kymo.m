@@ -30,7 +30,7 @@ inRoiPath = fullfile(SourceDir, inRoiName);
 % [ kymogram, mov, xy_roi ] = movie2kymo( tifPath );
 % xy_roi.plot(mov);
 
-pt = pttrack( tifPath );
+pt = pttrack( tifPath, 'pad', 30);
 % figure
 % imagesc(pt.kymogram)
 % figure

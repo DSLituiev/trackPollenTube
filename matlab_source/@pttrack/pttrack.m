@@ -5,8 +5,44 @@ classdef pttrack < handle
     %    pt = pttrack(path_to_movie)
     %    pt.plot()
     %
-    %this will return a plot of the movie (which can be scrolled) and 
-    % 
+    %this will return a plot of the movie (which can be scrolled)
+    %Now you can draw a ROI and save it.
+    %
+    %Press 'Kymo' button to see a kymogram.
+    %Now you can correct the ROI on the kymogram.
+    %You also can use 'Refine' button, to automatically refine the ROI
+    %(though it is not recommended for short movies).
+    %
+    %Now you can view the pixel intensities.
+    %If the movie had two colour channels, the ratio of median pixel
+    %values will be displayed in the lowest pane.
+    %
+    %Now you can retrieve the pixel intensity values and their statistics
+    %with commands:
+    %
+    %   pixs = pt.pixels()
+    %
+    %or various statistics (for each time point and channel):
+    %
+    %   pt.mean()
+    %   pt.var
+    %   pt.std()
+    %   pt.median()
+    %   pt.quantile(0.05)
+    %
+    %For ratiometric data (with two channels) you can retrieve the
+    %intensity ratio (or other formula, which has to be provided during the
+    %object instantiation, or set later:
+    %
+    %   % default:
+    %   pt.plot('ratio_formula', @(x,y)(y./x) )  
+    %   %  ... provide manual input ...
+    %   pt.ratio
+    %
+    %   % reset the formula:
+    %   pt.ratio_formula = @(x,y)(x./y);    
+    %   pt.ratio
+    %
     
     properties
         mov;
@@ -31,7 +67,7 @@ classdef pttrack < handle
         m4epsilon
         radius_field = [];
         draw_pix_mode = false;
-        fret_formula
+        ratio_formula
         ref_ch = 1; % reference (most static) channel
         mov_final_ = [];
     end
@@ -40,23 +76,24 @@ classdef pttrack < handle
         function obj = pttrack(varargin)    
             %% check the input parameters
             p = inputParser;
+            p.KeepUnmatched = true;
             addRequired(p, 'mov1_filename', @ischar);
-            addOptional(p, 'mov2_filename', '', @ischar);
-            addOptional(p, 'fret_formula', @(x,y)(y./x), @(x)isa(x, 'function_handle'));
-            addOptional(p, 'filter_radius', 3, @isscalar);
+%             addParamValue(p, 'mov2_filename', '', @ischar);
+            addParamValue(p, 'ratio_formula', @(x,y)(y./x), @(x)isa(x, 'function_handle'));
+            addParamValue(p, 'filter_radius', 3, @isscalar);
             parse(p,  varargin{:});
             %%         
             obj.mov_filename = p.Results.mov1_filename;
 
-            obj.fret_formula = p.Results.fret_formula;
+            obj.ratio_formula = p.Results.ratio_formula;
             [obj.kymogram, obj.mov, obj.xy_roi, obj.roiPath, ...
                 obj.kymoPath, obj.movPath, obj.kymo_interp, obj.m4epsilon] = ...
-                movie2kymo( varargin{:} );
+                movie2kymo( obj.mov_filename, '', '', p.Unmatched );
             if ndims(obj.mov) == 4
                 filter_kernel = min(9, p.Results.filter_radius )*[1,1];
                 m1 = medfilt3( squeeze(obj.mov(:,:,1,:)), filter_kernel );
                 m2 = medfilt3( squeeze(obj.mov(:,:,2,:)), filter_kernel);
-                obj.mov_final_ = obj.fret_formula(single(m1), single(m2));
+                obj.mov_final_ = obj.ratio_formula(single(m1), single(m2));
                 obj.mov_final_(isinf(obj.mov_final_)) = NaN;
                 clear m1 m2                
             end
@@ -64,6 +101,9 @@ classdef pttrack < handle
         %%
         function plot(obj, varargin)
             obj.xy_roi.plot(obj.mov);
+            axis equal 
+            axis tight
+            hold on
             addlistener( obj.xy_roi.img, 'Scroll', @(x,y)cb_scroll(obj,x,y) );
             addlistener( obj.xy_roi, 'Saving', @(x,y)cb_xy_save(obj,x,y) );
             
@@ -71,19 +111,19 @@ classdef pttrack < handle
             uistack(obj.xy_pos_marker,'bottom');
             uistack(obj.xy_roi.img.im,'bottom');
             
-            btn_kymo = uicontrol('Style', 'pushbutton', 'String', 'Kymo(f)',...
+            btn_kymo = uicontrol('Style', 'pushbutton', 'String', 'Kymo',...
                 'TooltipString', ['Show the kymogram for current ROI', char(10) , ...
                 ''],...
                 'Units','normalized', ...
                 'Position', obj.xy_roi.button_slots(5,:),...
                 'Callback', {@cb_plot_kymo, obj, true});
             
-            btn_kymo = uicontrol('Style', 'pushbutton', 'String', 'Kymo(s)',...
-                'TooltipString', ['Show the kymogram for current ROI', char(10) , ...
-                ''],...
-                'Units','normalized', ...
-                'Position', obj.xy_roi.button_slots(6,:),...
-                'Callback', {@cb_plot_kymo, obj, false});
+%             btn_kymo = uicontrol('Style', 'pushbutton', 'String', 'Kymo(s)',...
+%                 'TooltipString', ['Show the kymogram for current ROI', char(10) , ...
+%                 ''],...
+%                 'Units','normalized', ...
+%                 'Position', obj.xy_roi.button_slots(6,:),...
+%                 'Callback', {@cb_plot_kymo, obj, false});
         end
         %%
         function cb_plot_kymo(~,~,obj, varargin)
@@ -106,6 +146,9 @@ classdef pttrack < handle
             
             obj.fig_kymo = figure;
             obj.xyt.rt_roi.plot(obj.kymogram, 'keepcurve', p.Results.keepcurve_flag);
+            axis equal 
+            axis tight
+            hold on
             addlistener( obj.xyt.rt_roi, 'Saving', @(x,y)cb_rt_save(obj,x,y) );
             set(obj.fig_kymo, 'WindowScrollWheelFcn', {@setframe_wheel, obj.xy_roi.img})
                 
@@ -172,7 +215,7 @@ classdef pttrack < handle
                 end
             end
         end
-        function varargout = draw_pixels(obj)            
+        function varargout = draw_pixels(obj, varargin)            
             if isempty(obj.xyt)
                 cb_track(obj);
             end
@@ -180,13 +223,13 @@ classdef pttrack < handle
                 close(obj.fig_pix)
             end
             obj.xyt.fast = false;
-%             if obj.xy_roi.img.color && ~obj.xy_roi.img.rgb
-%             else
-                obj.xyt.apply_mask(obj.mov_final, obj.xyt.radius);
-%             end
+
+%             obj.xyt.apply_mask(obj.mov_final, obj.xyt.radius);
+            obj.xyt.apply_mask(obj.mov, obj.xyt.radius);
             
-            obj.fig_pix = obj.xyt.plot_pixels(obj.fig_pix, 'movPath', obj.xy_roi.img.mov, 'radius', obj.xyt.radius);
+            obj.fig_pix = obj.xyt.plot_pixels(obj.fig_pix, 'movPath', obj.mov, 'radius', obj.xyt.radius, 'ratio_formula', obj.ratio_formula);
             obj.cb_scroll(obj.xy_roi.img)
+            set(obj.fig_pix, 'WindowScrollWheelFcn', {@setframe_wheel, obj.xy_roi.img})
             varargout{1} = obj.fig_pix;
         end
         %%
@@ -213,16 +256,18 @@ classdef pttrack < handle
             if isempty(obj.kymogram)
                 obj.upd_kymo();
             end
-            [rt_roi, status] = kymo2roi( obj.kymogram(:,:, obj.xy_roi.img.channel), replace_extension(obj.mov_filename, '-kymo.roi'),  0, varargin{:});            
+            [rt_roi, status] = kymo2roi( obj.kymogram(:,:, obj.xy_roi.img.channel), replace_extension(obj.mov_filename, '-kymo.roi'),  0, varargin{:});
+            rt_roi.backup();
             obj.xyt = path_xyt( obj.xy_roi, rt_roi);
         end
         %%
         function cb_xy_save(obj, ~, varargin)
+%             [FileName,PathName] = uiputfile;
             obj.kymo2roi();
             obj.upd_kymo();
             cb_track(obj)
             if isfigure(obj.fig_kymo)                
-                obj.xyt.rt_roi.unbackup;
+%                 obj.xyt.rt_roi.unbackup;
                 close(obj.fig_kymo)
                 obj.xyt.rt_roi = [];
                 cb_plot_kymo([],[], obj)
@@ -244,8 +289,8 @@ classdef pttrack < handle
                     uistack(obj.rt_pos_marker, 'up')
                     uistack(obj.rt_pos_marker_bg, 'up')
                 end
-                if ~isempty(obj.fig_pix) && ishandle(obj.fig_pix) && ishandle(obj.xyt.pix_median_marker)
-                    set(obj.xyt.pix_median_marker, 'xdata', scr_mov.tt, 'ydata', obj.xyt.pix_median(scr_mov.tt) )
+                if ~isempty(obj.fig_pix) && ishandle(obj.fig_pix) && any(ishandle(obj.xyt.pix_median_marker))
+                    set(obj.xyt.pix_median_marker, 'xdata', scr_mov.tt*[1,1] )
                 end
             end
         end
@@ -290,7 +335,7 @@ classdef pttrack < handle
             obj.xyt.calc_coordinates()
             set(obj.xy_pos_marker, 'SizeData', pi * obj.xyt.radius^2)
         end
-        function cb_visualize3d(~,~,obj)
+        function ff = cb_visualize3d(~,~,obj)
             ff = visualize_kymo3D(obj.mov, obj.kymogram, obj.xy_roi, obj.xyt.rt_roi, obj.xy_roi.img.tt);
         end
         function varargout = subsref(obj, S)
@@ -303,7 +348,7 @@ classdef pttrack < handle
                     
                     if any( strcmpi(S(1).subs, {'mean','median', 'std', 'var', 'quantile'} ))
                         S(2).type = '()';
-                        S(2).subs = [{obj.mov_final()}, S(2).subs];
+                        S(2).subs = [{obj.mov}, S(2).subs];
                         [varargout{1:nargout}] = builtin('subsref', obj.xyt, S);  % as per documentation
                         return
                     end
@@ -332,6 +377,13 @@ classdef pttrack < handle
            else
                error('movie dimension is neither 3 nor 4.')
            end
+        end
+        
+        function out = ratio(obj, varargin)
+            out = obj.xyt.median(obj.mov);
+            if size(out,2)>1
+                out = obj.ratio_formula( out(:,1), out(:,2) );
+            end
         end
     end
     
