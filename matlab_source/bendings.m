@@ -65,7 +65,9 @@ xdim = find(size(p.Results.x)>1);
     end
 %% optimise
 if isempty(p.Results.kymo) || p.Results.heuristic
-    t0 = sort(round(fminsearch(@(y)line_interp_error(y, p.Results.x, t, T), t0)));%% add end points
+    if ~isempty(t0)
+        t0 = sort(round(fminsearch(@(y)line_interp_error(y, p.Results.x, t, T), t0)));%% add end points
+    end
     t0 = cat(xdim, 1, t0, T);
     t0 = [t0(diff(t0) > 0); t0(end)];
     sqddx = sum_square_ddx(ddx, t0);
