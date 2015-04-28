@@ -54,8 +54,10 @@ classdef pttrack < handle
         kymogram;
         mov_filename;
         mov2_filename;
+        fig_xy
         fig_kymo
         fig_pix
+        btn_refine_xy
         ls_xy_saving;
         xy_pos_marker;
         rt_pos_marker_bg;
@@ -100,6 +102,8 @@ classdef pttrack < handle
         end
         %%
         function plot(obj, varargin)
+            
+            obj.fig_xy = figure;
             obj.xy_roi.plot(obj.mov);
             axis equal 
             axis tight
@@ -118,12 +122,14 @@ classdef pttrack < handle
                 'Position', obj.xy_roi.button_slots(5,:),...
                 'Callback', {@cb_plot_kymo, obj, true});
             
-%             btn_kymo = uicontrol('Style', 'pushbutton', 'String', 'Kymo(s)',...
-%                 'TooltipString', ['Show the kymogram for current ROI', char(10) , ...
-%                 ''],...
-%                 'Units','normalized', ...
-%                 'Position', obj.xy_roi.button_slots(6,:),...
-%                 'Callback', {@cb_plot_kymo, obj, false});
+
+            obj.btn_refine_xy = uicontrol(obj.fig_xy, 'Style', 'pushbutton', 'String', 'Refine',...
+                'TooltipString', ['Show the pixel intensities', char(10) , ...
+                ''],...
+                'Units','normalized', ...
+                'Position', obj.xy_roi.button_slots(6,:),...
+                'Callback', {@cb_refine_xy, obj}, 'enable','off');
+            
         end
         %%
         function cb_plot_kymo(~,~,obj, varargin)
@@ -169,15 +175,17 @@ classdef pttrack < handle
                 'Units','normalized', ...
                 'Position', obj.xy_roi.button_slots(6,:),...
                 'Callback', {@cb_plot_pix, obj});
-            btn_kymo = uicontrol(obj.fig_kymo, 'Style', 'pushbutton', 'String', 'Refine',...
+             btn_refine_rt = uicontrol(obj.fig_kymo, 'Style', 'pushbutton', 'String', 'Refine',...
                 'TooltipString', ['Show the pixel intensities', char(10) , ...
                 ''],...
                 'Units','normalized', ...
                 'Position', obj.xy_roi.button_slots(7,:),...
-                'Callback', {@cb_refine, obj});
+                'Callback', {@cb_refine_rt, obj}, 'enable','on');
+            
+            set(obj.btn_refine_xy, 'enable','on');
         end
         %%
-        function cb_refine(~,~,obj)
+        function cb_refine_xy(~,~,obj)
 %             obj.xyt.refine_path(obj.mov);
             
 %             [~, grdiff] = raw_kymo_edge(single(obj.kymogram), 8, []);            
@@ -202,7 +210,25 @@ classdef pttrack < handle
 %             obj.xyt.rt_roi.plot(obj.kymogram, 'm+', 'keepcurve', true);
 %             cb_plot_kymo([],[],obj, true, true);
         end
-        
+         %%
+        function cb_refine_rt(~,~,obj)
+%             obj.xyt.refine_path(obj.mov);
+            
+            [~, grdiff] = raw_kymo_edge(single(obj.kymogram(:,:,obj.ref_ch)), 1, []);   
+            gr_padded = [ grdiff; double(quantile(grdiff(:), 3/8)) * ones(5, size(grdiff,2) )];
+            [ t0, x0 ] = segment_snake(gr_padded,  obj.xyt.rt_roi.x0, obj.xyt.rt_roi.y0,...
+                'useAsEnergy', true, 'Delta',0, 'Wline', 1);
+%             [ t0, x0 ] = segment_snake( [obj.kymogram; double(quantile(obj.kymogram(:), 0.05)) * ones(5, size(obj.kymogram,2) )],  obj.xyt.rt_roi.x0, obj.xyt.rt_roi.y0 );
+            obj.xyt.rt_roi.x0 = round(t0);
+            obj.xyt.rt_roi.y0 = round(x0);
+            obj.xyt.rt_roi.replot_all()
+%             delete(obj.xyt);
+%             obj.kymo2roi('heuristic', true);
+            
+%             obj.fig_kymo = figure;
+%             obj.xyt.rt_roi.plot(obj.kymogram, 'm+', 'keepcurve', true);
+%             cb_plot_kymo([],[],obj, true, true);
+        end
         %%
         function cb_plot_pix(but_obj,~,obj)
            obj.draw_pix_mode = get(but_obj, 'Value');  
@@ -326,7 +352,7 @@ classdef pttrack < handle
             end
             cb_scroll(obj, obj.xy_roi.img)
 %             set(obj.xy_pos_marker, 'xdata', obj.xyt.xt(obj.xy_roi.img.tt), ...
-%                 'ydata', obj.xyt.yt(obj.xy_roi.img.tt), ...
+%                 'ydata', obj.xyt.yt(obj.xy_roi.img.tt) ...
 %                 'SizeData', pi * obj.xyt.radius^2)            
         end
         

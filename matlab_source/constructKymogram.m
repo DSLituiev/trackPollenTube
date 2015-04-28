@@ -19,6 +19,7 @@ function [kymoGram, path] = constructKymogram(path, mov, varargin)
 %
 if ndims(mov) == 3
     [ Y, X, T] = size(mov);
+    C = 1;
 elseif ndims(mov) == 4
     [ Y, X, C, T] = size(mov);
 end
@@ -86,9 +87,14 @@ switch kymoMethod
 end
 
 try
-indt = sub2ind(size(mov), repmat(yy,[1,T,C]), repmat(xx,[1,T,C]), ...
-    repmat( permute(1:C, [1,3,2]), [numel(xx),T,1]) ,...
-    repmat(1:T, [numel(xx),1,C]) );
+    if C>1
+        indt = sub2ind(size(mov), repmat(yy,[1,T,C]), repmat(xx,[1,T,C]), ...
+            repmat( permute(1:C, [1,3,2]), [numel(xx),T,1]) ,...
+            repmat(1:T, [numel(xx),1,C]) );
+    else
+        indt = sub2ind(size(mov), repmat(yy,[1,T]), repmat(xx,[1,T]), ...
+            repmat(1:T, [numel(xx),1]) );
+    end
 catch err
     fprintf('movie size:\t')
     disp(size(mov))    

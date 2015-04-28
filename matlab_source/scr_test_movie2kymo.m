@@ -6,23 +6,28 @@ clc
 includeDependencies( )
 % addpath('/usr/local/MATLAB/R2013b/bin/glnxa64/') % libtiff
 % define path to the files
-% SourceDir = '/home/dima/data/pollen_tubes/Hannes PT Growth'; % 
+% SourceDir = '/home/dima/data/pollen_tubes/Hannes PT Growth'; %
 % fileName = '1sec_delay5.tif';
 % inRoiName = '1sec_delay5.roi';
 % outKymoName = 'kymo.tif';
-% %
+
+SourceDir = '/media/QuyNgo_data/Aurel_selected_pt_movies';
+
+dispdir(SourceDir)
+fileName = '2012_07_17_rboh2_Series013.tif';
+%
 % SourceDir = '../testcases/QAN_WT_023_25112012_Rg14burst_Rg14fer';
 % fileName = 'dsRed-a-b.tif';
 % inRoiName = 'path.roi';
 % outKymoName = 'kymo.tif';
-
-SourceDir = '../testcases/Aurel/';
-fileName = '2012_02_13_WT13_Series005.tif';
-inRoiName = '2012_02_13_WT13_Series005.tif';
+% 
+% SourceDir = '../testcases/Aurel/';
+% fileName = '2012_02_13_WT13_Series005.tif';
+% inRoiName = '2012_02_13_WT13_Series005.tif';
 % outKymoName = 'kymo.tif';
 
 tifPath = fullfile(SourceDir, fileName); 
-inRoiPath = fullfile(SourceDir, inRoiName);
+% inRoiPath = fullfile(SourceDir, inRoiName);
 % outKymoPath = fullfile(SourceDir, outKymoName);
 
 % delete(inRoiPath)

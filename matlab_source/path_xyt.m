@@ -656,7 +656,6 @@ classdef path_xyt<handle
             hold on
             obj.pix_median_marker(1) = plot([0,0], get(spl(2), 'ylim'), 'r.-', 'markersize', pi*9);
             ylabel('median intensity')
-            xlabel('time (frames)')
             
             if ndims(obj.pixels) > 2
                 obj.pix_ratio = p.Results.fret_formula(obj.pix_median(:,1), obj.pix_median(:,2));
@@ -665,8 +664,8 @@ classdef path_xyt<handle
                 hold on
                 obj.pix_median_marker(2) = plot([0,0], get(spl(3), 'ylim'), 'r.-', 'markersize', pi*9);
                 ylabel('ratio')
-                xlabel('time (frames)')
             end
+            xlabel('time (frames)')
             %%
             set(spl, 'xlim', [1, obj.T])
             if nargout > 0

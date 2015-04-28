@@ -26,8 +26,13 @@ FileID = Tiff(FileTif, 'r');
 rows_per_strip          = FileID.getTag('RowsPerStrip');
 rows_per_strip          = min(rows_per_strip, InfoImage(1).Height);
 
-out = regexpi(FileID.getTag('ImageDescription'), 'channels=(\d*)\n', 'tokens');
-channels = str2double(out{1});
+try
+    out = regexpi(FileID.getTag('ImageDescription'), 'channels=(\d*)\n', 'tokens');
+    channels = str2double(out{1});
+catch
+    channels = 1;
+end
+
 if isempty(channels)
     warning('number of channels not found; setting to 1')
     channels = 1;
